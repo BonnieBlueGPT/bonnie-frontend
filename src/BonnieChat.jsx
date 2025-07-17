@@ -177,6 +177,7 @@ export default function BonnieChat() {
   const [online, setOnline] = useState(false);
   const [pendingMessage, setPendingMessage] = useState(null);
   const [hasFiredIdleMessage, setHasFiredIdleMessage] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState('connecting'); // 'connecting', 'online', 'offline'
   
   const endRef = useRef(null);
   const idleTimerRef = useRef(null);
@@ -246,24 +247,43 @@ export default function BonnieChat() {
     };
   }, [messages.length, hasFiredIdleMessage, online]);
 
-  // Initial setup
+  // FIXED: Better initialization with fallback
   useEffect(() => {
     const initializeChat = async () => {
+      console.log("🚀 Initializing chat...");
+      setConnectionStatus('connecting');
+      
       try {
+        console.log("📞 Calling entry endpoint...");
         const { reply, delay } = await makeRequest(CONSTANTS.API_ENDPOINTS.ENTRY, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ session_id: sessionId })
         });
         
+        console.log("✅ Entry endpoint successful:", { reply, delay });
+        
+        // Set online IMMEDIATELY after successful API call
+        setOnline(true);
+        setConnectionStatus('online');
+        
+        // Then start typing simulation
         setTimeout(() => {
-          setOnline(true);
           simulateBonnieTyping(reply);
         }, delay || 1000);
+        
       } catch (err) {
-        console.error('Failed to initialize chat:', err);
+        console.error('❌ Failed to initialize chat:', err);
+        
+        // IMPORTANT: Set online to true even if API fails
+        // This ensures the chat is usable even with CORS issues
         setOnline(true);
-        simulateBonnieTyping("Hey there 😘");
+        setConnectionStatus('online');
+        
+        // Show a fallback message
+        setTimeout(() => {
+          simulateBonnieTyping("Hey there 😘 I'm having some connection issues, but I'm here!");
+        }, 1000);
       }
     };
 
@@ -288,6 +308,8 @@ export default function BonnieChat() {
 
   // FIXED: Improved typing simulation with bulletproof empty part filtering
   const simulateBonnieTyping = useCallback((raw) => {
+    console.log("💬 Starting typing simulation, online:", online);
+    
     if (!online) {
       console.log("⚠️ Not online, skipping typing simulation");
       return;
@@ -397,9 +419,9 @@ export default function BonnieChat() {
     processNextPart();
   }, [online, addMessage]);
 
-  // Optimized send function
+  // FIXED: Better send function with offline handling
   const handleSend = useCallback(async (text) => {
-    if (!text?.trim() || busy) return;
+    if (!text?.trim()) return;
     
     const messageText = text.trim();
     setInput('');
@@ -410,6 +432,15 @@ export default function BonnieChat() {
     
     await addMessage(messageText, 'user');
     
+    // If offline, show a fallback message
+    if (!online) {
+      setBusy(false);
+      setTimeout(() => {
+        simulateBonnieTyping("I'm having connection issues right now, but I'm still here with you! 💕");
+      }, 1000);
+      return;
+    }
+    
     try {
       const { reply } = await makeRequest(CONSTANTS.API_ENDPOINTS.CHAT, {
         method: 'POST',
@@ -417,17 +448,13 @@ export default function BonnieChat() {
         body: JSON.stringify({ session_id: sessionId, message: messageText })
       });
       
-      if (online) {
-        simulateBonnieTyping(reply);
-      } else {
-        setPendingMessage({ text: reply });
-      }
+      simulateBonnieTyping(reply);
     } catch (err) {
       console.error('Failed to send message:', err);
       setBusy(false);
-      simulateBonnieTyping("Oops… Bonnie had a moment 💔");
+      simulateBonnieTyping("Oops… I'm having some technical difficulties, but I'm still here! 💔");
     }
-  }, [busy, sessionId, makeRequest, online, simulateBonnieTyping, addMessage]);
+  }, [sessionId, makeRequest, online, simulateBonnieTyping, addMessage]);
 
   // Keyboard event handler
   const handleKeyDown = useCallback((e) => {
@@ -515,7 +542,12 @@ export default function BonnieChat() {
           alignItems: 'center', 
           gap: 4 
         }}>
-          {online ? (
+          {connectionStatus === 'connecting' ? (
+            <>
+              <span>🔄</span>
+              <span>Connecting...</span>
+            </>
+          ) : online ? (
             <>
               <span style={{ animation: 'pulseHeart 1.2s infinite' }}>💚</span>
               <span>Online</span>
@@ -552,7 +584,7 @@ export default function BonnieChat() {
         <div ref={endRef} />
       </main>
 
-      {/* Input */}
+      {/* Input - FIXED: Always allow input, even if offline */}
       <footer style={inputContainerStyle}>
         <input
           style={{ 
@@ -562,11 +594,12 @@ export default function BonnieChat() {
             border: '1px solid #ccc', 
             fontSize: 16,
             outline: 'none',
-            transition: 'border-color 0.2s'
+            transition: 'border-color 0.2s',
+            opacity: busy ? 0.7 : 1 // Only grey out when busy, not when offline
           }}
           value={input}
-          placeholder="Type something…"
-          disabled={busy || isLoading}
+          placeholder={online ? "Type something…" : "Type something… (offline mode)"}
+          disabled={busy} // Only disable when busy, not when offline
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           aria-label="Type your message"
@@ -582,11 +615,11 @@ export default function BonnieChat() {
             cursor: (busy || !input.trim()) ? 'not-allowed' : 'pointer',
             transition: 'background-color 0.2s'
           }}
-          disabled={busy || !input.trim() || isLoading}
+          disabled={busy || !input.trim()} // Only disable when busy or empty, not when offline
           onClick={() => handleSend(input)}
           aria-label="Send message"
         >
-          {isLoading ? '...' : 'Send'}
+          {busy ? '...' : 'Send'}
         </button>
       </footer>
     </div>
