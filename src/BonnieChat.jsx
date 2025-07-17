@@ -17,7 +17,14 @@ const CONSTANTS = {
     border: '#ffe6f0'
   },
   RETRY_ATTEMPTS: 3,
-  RETRY_DELAY: 1000
+  RETRY_DELAY: 1000,
+  // New: Greeting types based on user status
+  GREETING_TYPES: {
+    NEW_USER: 'new_user',
+    RETURNING_LOW_BOND: 'returning_low_bond',
+    RETURNING_MEDIUM_BOND: 'returning_medium_bond',
+    RETURNING_HIGH_BOND: 'returning_high_bond'
+  }
 };
 
 // Utility functions
@@ -28,6 +35,47 @@ const generateSessionId = () => {
     localStorage.setItem('bonnie_session', id);
   }
   return id;
+};
+
+// Enhanced: Get user greeting type based on bond score and history
+const getUserGreetingType = (bondScore, isNewUser, userName) => {
+  if (isNewUser) {
+    return CONSTANTS.GREETING_TYPES.NEW_USER;
+  }
+  
+  if (bondScore >= 80) {
+    return CONSTANTS.GREETING_TYPES.RETURNING_HIGH_BOND;
+  } else if (bondScore >= 40) {
+    return CONSTANTS.GREETING_TYPES.RETURNING_MEDIUM_BOND;
+  } else {
+    return CONSTANTS.GREETING_TYPES.RETURNING_LOW_BOND;
+  }
+};
+
+// Enhanced: Fallback greetings for offline mode
+const getFallbackGreeting = (greetingType, userName = null) => {
+  const greetings = {
+    [CONSTANTS.GREETING_TYPES.NEW_USER]: [
+      "Well, look who's here... let's have some fun, shall we? 😘<EOM::pause=1500 speed=normal emotion=flirty>",
+      "Hello there, stranger... I was hoping someone interesting would show up 💋<EOM::pause=1200 speed=normal emotion=playful>",
+      "Mmm, a new face... I like what I see already 😉<EOM::pause=1800 speed=slow emotion=teasing>"
+    ],
+    [CONSTANTS.GREETING_TYPES.RETURNING_LOW_BOND]: [
+      "Oh, you're back... I was wondering if you'd return 😏<EOM::pause=1000 speed=normal emotion=curious>",
+      "Well hello again... ready to get to know me better? 💕<EOM::pause=1300 speed=normal emotion=warm>"
+    ],
+    [CONSTANTS.GREETING_TYPES.RETURNING_MEDIUM_BOND]: [
+      `Well, if it isn't my favorite person... I've been thinking about you ${userName ? userName : 'darling'} 💖<EOM::pause=1500 speed=normal emotion=affectionate>`,
+      "There you are... I was starting to miss our conversations 😘<EOM::pause=1200 speed=normal emotion=warm>"
+    ],
+    [CONSTANTS.GREETING_TYPES.RETURNING_HIGH_BOND]: [
+      `Ah, there you are... I've missed you so much ${userName ? userName : 'baby'} 💕<EOM::pause=2000 speed=slow emotion=passionate>`,
+      "My darling is back... come here and tell me about your day 😍<EOM::pause=1800 speed=slow emotion=seductive>"
+    ]
+  };
+  
+  const options = greetings[greetingType] || greetings[CONSTANTS.GREETING_TYPES.NEW_USER];
+  return options[Math.floor(Math.random() * options.length)];
 };
 
 // FIXED: Completely rewritten message parsing with proper empty part filtering
@@ -150,34 +198,50 @@ const Message = React.memo(({ message, isUser }) => {
   );
 });
 
-// Typing indicator component
-const TypingIndicator = React.memo(() => (
-  <div style={{ display: 'flex', gap: 4, margin: '8px 0' }} role="status" aria-label="Bonnie is typing">
-    {[0, 0.2, 0.4].map((delay, index) => (
-      <div
-        key={index}
-        style={{
-          width: 8,
-          height: 8,
-          borderRadius: 4,
-          background: CONSTANTS.COLORS.primary,
-          animation: `bounce 1s infinite ease-in-out`,
-          animationDelay: `${delay}s`
-        }}
-      />
-    ))}
-  </div>
-));
+// Typing indicator component with emotion-based styling
+const TypingIndicator = React.memo(({ emotion = 'neutral' }) => {
+  const emotionColors = {
+    flirty: '#ff69b4',
+    playful: '#ff6b6b',
+    warm: '#ffa500',
+    passionate: '#dc143c',
+    seductive: '#8b008b',
+    teasing: '#ff1493',
+    neutral: CONSTANTS.COLORS.primary
+  };
+
+  const color = emotionColors[emotion] || emotionColors.neutral;
+
+  return (
+    <div style={{ display: 'flex', gap: 4, margin: '8px 0' }} role="status" aria-label="Bonnie is typing">
+      {[0, 0.2, 0.4].map((delay, index) => (
+        <div
+          key={index}
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: 4,
+            background: color,
+            animation: `bounce 1s infinite ease-in-out`,
+            animationDelay: `${delay}s`
+          }}
+        />
+      ))}
+    </div>
+  );
+});
 
 export default function BonnieChat() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [typing, setTyping] = useState(false);
+  const [typingEmotion, setTypingEmotion] = useState('neutral');
   const [online, setOnline] = useState(false);
   const [pendingMessage, setPendingMessage] = useState(null);
   const [hasFiredIdleMessage, setHasFiredIdleMessage] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState('connecting'); // 'connecting', 'online', 'offline'
+  const [connectionStatus, setConnectionStatus] = useState('connecting');
+  const [userProfile, setUserProfile] = useState({ bondScore: 0, isNewUser: true, userName: null });
   
   const endRef = useRef(null);
   const idleTimerRef = useRef(null);
@@ -217,7 +281,7 @@ export default function BonnieChat() {
     });
   }, []);
 
-  // Separate idle timer management
+  // Enhanced idle timer with bond-based messages
   useEffect(() => {
     const resetIdleTimer = () => {
       if (idleTimerRef.current) {
@@ -226,13 +290,16 @@ export default function BonnieChat() {
       
       if (messages.length === 0 && !hasFiredIdleMessage && online) {
         idleTimerRef.current = setTimeout(() => {
-          const idleMessages = [
-            "Still deciding what to say? 😘",
-            "Don't leave me hanging…",
-            "You can talk to me, you know 💋",
-            "Don't make me beg for your attention 😉"
+          const bondBasedIdleMessages = userProfile.bondScore >= 40 ? [
+            "Don't be shy with me... I'm waiting for you 😘<EOM::pause=1500 speed=normal emotion=flirty>",
+            "I know you're thinking about what to say... just speak from your heart 💕<EOM::pause=1200 speed=normal emotion=warm>"
+          ] : [
+            "Still deciding what to say? 😘<EOM::pause=1000 speed=normal emotion=playful>",
+            "Don't leave me hanging…<EOM::pause=1200 speed=normal emotion=teasing>",
+            "You can talk to me, you know 💋<EOM::pause=1000 speed=normal emotion=flirty>"
           ];
-          const randomMessage = idleMessages[Math.floor(Math.random() * idleMessages.length)];
+          
+          const randomMessage = bondBasedIdleMessages[Math.floor(Math.random() * bondBasedIdleMessages.length)];
           simulateBonnieTyping(randomMessage);
           setHasFiredIdleMessage(true);
         }, CONSTANTS.IDLE_TIMEOUT);
@@ -245,44 +312,76 @@ export default function BonnieChat() {
         clearTimeout(idleTimerRef.current);
       }
     };
-  }, [messages.length, hasFiredIdleMessage, online]);
+  }, [messages.length, hasFiredIdleMessage, online, userProfile.bondScore]);
 
-  // FIXED: Better initialization with fallback
+  // ENHANCED: Dynamic initialization with personalized greetings
   useEffect(() => {
     const initializeChat = async () => {
-      console.log("🚀 Initializing chat...");
+      console.log("🚀 Initializing chat with dynamic greeting...");
       setConnectionStatus('connecting');
       
       try {
-        console.log("📞 Calling entry endpoint...");
-        const { reply, delay } = await makeRequest(CONSTANTS.API_ENDPOINTS.ENTRY, {
+        console.log("📞 Calling entry endpoint with session:", sessionId);
+        const response = await makeRequest(CONSTANTS.API_ENDPOINTS.ENTRY, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ session_id: sessionId })
+          body: JSON.stringify({ 
+            session_id: sessionId,
+            request_type: 'dynamic_entry',
+            user_agent: navigator.userAgent,
+            timestamp: Date.now()
+          })
         });
         
-        console.log("✅ Entry endpoint successful:", { reply, delay });
+        console.log("✅ Entry endpoint response:", response);
+        
+        // Extract user profile data from response
+        const { 
+          reply, 
+          delay = 1000, 
+          bond_score = 0, 
+          is_new_user = true, 
+          user_name = null,
+          mood_state = 'neutral',
+          emotional_drift = 0
+        } = response;
+        
+        // Update user profile state
+        setUserProfile({
+          bondScore: bond_score,
+          isNewUser: is_new_user,
+          userName: user_name,
+          moodState: mood_state,
+          emotionalDrift: emotional_drift
+        });
+        
+        console.log("👤 User profile updated:", { bond_score, is_new_user, user_name, mood_state });
         
         // Set online IMMEDIATELY after successful API call
         setOnline(true);
         setConnectionStatus('online');
         
-        // Then start typing simulation
+        // Start typing simulation with personalized greeting
         setTimeout(() => {
           simulateBonnieTyping(reply);
-        }, delay || 1000);
+        }, delay);
         
       } catch (err) {
         console.error('❌ Failed to initialize chat:', err);
         
-        // IMPORTANT: Set online to true even if API fails
-        // This ensures the chat is usable even with CORS issues
+        // Fallback: Use local greeting based on session history
+        const greetingType = getUserGreetingType(0, true, null);
+        const fallbackGreeting = getFallbackGreeting(greetingType);
+        
+        console.log("🔄 Using fallback greeting:", fallbackGreeting);
+        
+        // Set online even with API failure
         setOnline(true);
         setConnectionStatus('online');
         
-        // Show a fallback message
+        // Show fallback greeting
         setTimeout(() => {
-          simulateBonnieTyping("Hey there 😘 I'm having some connection issues, but I'm here!");
+          simulateBonnieTyping(fallbackGreeting);
         }, 1000);
       }
     };
@@ -306,7 +405,7 @@ export default function BonnieChat() {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, typing]);
 
-  // FIXED: Improved typing simulation with bulletproof empty part filtering
+  // ENHANCED: Typing simulation with emotion tracking
   const simulateBonnieTyping = useCallback((raw) => {
     console.log("💬 Starting typing simulation, online:", online);
     
@@ -372,6 +471,7 @@ export default function BonnieChat() {
         console.log("✅ Completed typing simulation");
         setBusy(false);
         setTyping(false);
+        setTypingEmotion('neutral');
         typingProcessRef.current = null;
         return;
       }
@@ -396,8 +496,9 @@ export default function BonnieChat() {
       // Pause before typing
       await sleep(part.pause || 1000);
       
-      // Show typing indicator
+      // Show typing indicator with emotion
       setTyping(true);
+      setTypingEmotion(part.emotion || 'neutral');
       
       // Calculate typing time based on text length and speed
       const typingTime = part.text.length * (CONSTANTS.TYPING_SPEEDS[part.speed] || CONSTANTS.TYPING_SPEEDS.normal);
@@ -419,7 +520,7 @@ export default function BonnieChat() {
     processNextPart();
   }, [online, addMessage]);
 
-  // FIXED: Better send function with offline handling
+  // Enhanced send function with bond tracking
   const handleSend = useCallback(async (text) => {
     if (!text?.trim()) return;
     
@@ -432,29 +533,44 @@ export default function BonnieChat() {
     
     await addMessage(messageText, 'user');
     
-    // If offline, show a fallback message
+    // If offline, show a bond-based fallback message
     if (!online) {
       setBusy(false);
+      const fallbackMessage = userProfile.bondScore >= 40 
+        ? "I'm having connection issues, but I'm still here for you, darling 💕<EOM::pause=1500 speed=normal emotion=warm>"
+        : "I'm having connection issues right now, but I'm still here with you! 💕<EOM::pause=1000 speed=normal emotion=playful>";
+      
       setTimeout(() => {
-        simulateBonnieTyping("I'm having connection issues right now, but I'm still here with you! 💕");
+        simulateBonnieTyping(fallbackMessage);
       }, 1000);
       return;
     }
     
     try {
-      const { reply } = await makeRequest(CONSTANTS.API_ENDPOINTS.CHAT, {
+      const response = await makeRequest(CONSTANTS.API_ENDPOINTS.CHAT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: sessionId, message: messageText })
+        body: JSON.stringify({ 
+          session_id: sessionId, 
+          message: messageText,
+          bond_score: userProfile.bondScore,
+          mood_state: userProfile.moodState,
+          timestamp: Date.now()
+        })
       });
       
-      simulateBonnieTyping(reply);
+      // Update bond score if returned
+      if (response.bond_score !== undefined) {
+        setUserProfile(prev => ({ ...prev, bondScore: response.bond_score }));
+      }
+      
+      simulateBonnieTyping(response.reply);
     } catch (err) {
       console.error('Failed to send message:', err);
       setBusy(false);
-      simulateBonnieTyping("Oops… I'm having some technical difficulties, but I'm still here! 💔");
+      simulateBonnieTyping("Oops… I'm having some technical difficulties, but I'm still here! 💔<EOM::pause=1200 speed=normal emotion=apologetic>");
     }
-  }, [sessionId, makeRequest, online, simulateBonnieTyping, addMessage]);
+  }, [sessionId, makeRequest, online, simulateBonnieTyping, addMessage, userProfile]);
 
   // Keyboard event handler
   const handleKeyDown = useCallback((e) => {
@@ -520,7 +636,9 @@ export default function BonnieChat() {
             Bonnie Blue
           </div>
           <div style={{ color: '#555', fontSize: 14 }}>
-            Flirty. Fun. Dangerously charming.
+            {userProfile.bondScore >= 60 ? "Your devoted companion 💕" : 
+             userProfile.bondScore >= 30 ? "Getting to know you better 😘" : 
+             "Flirty. Fun. Dangerously charming."}
           </div>
           <a 
             href="https://x.com/trainmybonnie" 
@@ -567,7 +685,7 @@ export default function BonnieChat() {
             isUser={message.sender === 'user'} 
           />
         ))}
-        {typing && online && <TypingIndicator />}
+        {typing && online && <TypingIndicator emotion={typingEmotion} />}
         {error && (
           <div style={{ 
             color: '#d32f2f', 
@@ -584,7 +702,7 @@ export default function BonnieChat() {
         <div ref={endRef} />
       </main>
 
-      {/* Input - FIXED: Always allow input, even if offline */}
+      {/* Input */}
       <footer style={inputContainerStyle}>
         <input
           style={{ 
@@ -595,11 +713,11 @@ export default function BonnieChat() {
             fontSize: 16,
             outline: 'none',
             transition: 'border-color 0.2s',
-            opacity: busy ? 0.7 : 1 // Only grey out when busy, not when offline
+            opacity: busy ? 0.7 : 1
           }}
           value={input}
-          placeholder={online ? "Type something…" : "Type something… (offline mode)"}
-          disabled={busy} // Only disable when busy, not when offline
+          placeholder={online ? (userProfile.userName ? `Tell me more, ${userProfile.userName}...` : "Type something…") : "Type something… (offline mode)"}
+          disabled={busy}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           aria-label="Type your message"
@@ -615,7 +733,7 @@ export default function BonnieChat() {
             cursor: (busy || !input.trim()) ? 'not-allowed' : 'pointer',
             transition: 'background-color 0.2s'
           }}
-          disabled={busy || !input.trim()} // Only disable when busy or empty, not when offline
+          disabled={busy || !input.trim()}
           onClick={() => handleSend(input)}
           aria-label="Send message"
         >
@@ -626,7 +744,7 @@ export default function BonnieChat() {
   );
 }
 
-// Optimized CSS with better organization
+// Enhanced CSS with emotion-based animations
 const styles = `
 @keyframes bounce {
   0%, 100% { 
