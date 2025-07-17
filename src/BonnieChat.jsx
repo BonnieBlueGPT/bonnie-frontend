@@ -411,6 +411,30 @@ styleSheet.textContent = `
   /* Mobile-specific styles */
   @media (max-width: 768px) {
     .message-wrapper { max-width: 85%; }
+    
+    /* Optimize animations for mobile performance */
+    .message-enter {
+      animation: slideInMobile 0.3s ease-out;
+    }
+    
+    /* Reduce header size on mobile */
+    .mobile-header {
+      padding: 0.5rem 0.75rem !important;
+    }
+    
+    .mobile-profile-img {
+      width: 40px !important;
+      height: 40px !important;
+    }
+    
+    .mobile-title {
+      font-size: 1rem !important;
+    }
+  }
+  
+  @keyframes slideInMobile {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
   
   /* Smooth iOS scrolling */
@@ -616,7 +640,20 @@ export default function BonnieChat() {
         setBondScore(response.bond_score);
       }
       
-      simulateBonnieTyping(response.reply || "I'm here for you, darling 💕", adaptedPersonality, userSentiment, response.bond_score || bondScore);
+      // Add personalization based on bond score
+      let personalizedReply = response.reply || "I'm here for you, darling 💕";
+      
+      // Add nicknames based on bond level
+      if (bondScore > 80 && !personalizedReply.includes('love') && !personalizedReply.includes('darling')) {
+        const nicknames = ['my love', 'sweetheart', 'baby', 'honey'];
+        const nickname = nicknames[Math.floor(Math.random() * nicknames.length)];
+        personalizedReply = personalizedReply.replace(/\.$/, `, ${nickname}.`);
+      } else if (bondScore < 30) {
+        // More formal at low bond scores
+        personalizedReply = personalizedReply.replace(/darling|love|baby|honey/gi, 'there');
+      }
+      
+      simulateBonnieTyping(personalizedReply, adaptedPersonality, userSentiment, response.bond_score || bondScore);
     } catch (err) {
       godLog("❌ API Error", err);
       
@@ -684,7 +721,7 @@ export default function BonnieChat() {
         display: 'flex',
         alignItems: 'center',
         gap: '1rem',
-      }}>
+      }} className="mobile-header">
         {/* Profile Section */}
         <div style={{
           display: 'flex',
