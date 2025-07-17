@@ -470,6 +470,45 @@ export default function BonnieChat() {
     return () => window.visualViewport?.removeEventListener('resize', handleResize);
   }, []);
 
+  // Idle engagement with personalized messages based on bond score
+  useEffect(() => {
+    const checkIdle = () => {
+      const now = Date.now();
+      const idleTime = now - lastActivity;
+      
+      if (idleTime > CONSTANTS.IDLE_TIMEOUT && !idleMessageSent && messages.length > 0) {
+        // Select idle messages based on bond score
+        let idleMessagePool;
+        if (bondScore < 30) {
+          idleMessagePool = CONSTANTS.IDLE_MESSAGES.low;
+        } else if (bondScore < 70) {
+          idleMessagePool = CONSTANTS.IDLE_MESSAGES.medium;
+        } else {
+          idleMessagePool = CONSTANTS.IDLE_MESSAGES.high;
+        }
+        
+        const idleMessage = idleMessagePool[Math.floor(Math.random() * idleMessagePool.length)];
+        
+        // Add slight randomization to make it feel more natural
+        const randomDelay = Math.random() * 5000;
+        
+        setTimeout(() => {
+          simulateBonnieTyping(idleMessage.text, CONSTANTS.PERSONALITY_LAYERS.PLAYFUL, { primary: idleMessage.mood });
+          setIdleMessageSent(true);
+        }, randomDelay);
+      }
+    };
+
+    const interval = setInterval(checkIdle, 10000);
+    return () => clearInterval(interval);
+  }, [lastActivity, idleMessageSent, messages.length, bondScore, simulateBonnieTyping]);
+
+  // Reset idle state on user activity
+  const resetIdleState = useCallback(() => {
+    setLastActivity(Date.now());
+    setIdleMessageSent(false);
+  }, []);
+
   const addMessage = useCallback((text, sender, personality = null, sentiment = null) => {
     const newMessage = {
       id: Date.now() + Math.random(),
@@ -481,9 +520,14 @@ export default function BonnieChat() {
     };
     setMessages(prevMessages => [...prevMessages.slice(-CONSTANTS.MAX_MESSAGES + 1), newMessage]);
     godLog("✅ Message Added", newMessage);
-  }, []);
+    
+    // Reset idle state on user messages
+    if (sender === 'user') {
+      resetIdleState();
+    }
+  }, [resetIdleState]);
 
-  const simulateBonnieTyping = useCallback((reply, personality, sentiment) => {
+  const simulateBonnieTyping = useCallback((reply, personality, sentiment, currentBondScore = bondScore) => {
     setTyping(true);
     
     // More granular typing speeds based on emotion
@@ -498,7 +542,7 @@ export default function BonnieChat() {
       supportive: 50 + Math.random() * 25
     };
     
-    // Determine speed based on sentiment
+    // Determine speed based on sentiment and bond score
     let charSpeed = emotionSpeeds.normal;
     if (sentiment?.primary === 'happy' || sentiment?.primary === 'excited') {
       charSpeed = emotionSpeeds.excited;
@@ -508,9 +552,18 @@ export default function BonnieChat() {
       charSpeed = emotionSpeeds.serious;
     } else if (sentiment?.primary === 'flirty') {
       charSpeed = emotionSpeeds.flirty;
-    } else if (sentiment?.primary === 'playful') {
-      charSpeed = emotionSpeeds.playful;
-    }
+          } else if (sentiment?.primary === 'playful') {
+        charSpeed = emotionSpeeds.playful;
+      }
+      
+      // Adjust speed based on bond score - higher bond = more natural, varied pacing
+      if (currentBondScore > 70) {
+        charSpeed *= 0.8; // Faster, more comfortable
+        // Add more random pauses for natural feel
+        charSpeed += Math.random() * 30;
+      } else if (currentBondScore < 30) {
+        charSpeed *= 1.2; // Slower, more cautious
+      }
     
     // Calculate duration with pauses for punctuation
     const baseTypingDuration = reply.length * charSpeed;
@@ -527,7 +580,7 @@ export default function BonnieChat() {
       addMessage(reply, 'bonnie', personality, sentiment);
       setTyping(false);
     }, totalDuration);
-  }, [addMessage]);
+  }, [addMessage, bondScore]);
 
   const handleSend = useCallback(async () => {
     const text = input.trim();
@@ -557,19 +610,61 @@ export default function BonnieChat() {
         })
       });
       godLog("🔗 API Response", response);
-      simulateBonnieTyping(response.reply || "I'm here for you, darling 💕", adaptedPersonality, userSentiment);
+      
+      // Update bond score if provided
+      if (response.bond_score !== undefined) {
+        setBondScore(response.bond_score);
+      }
+      
+      simulateBonnieTyping(response.reply || "I'm here for you, darling 💕", adaptedPersonality, userSentiment, response.bond_score || bondScore);
     } catch (err) {
       godLog("❌ API Error", err);
       
       // Emotionally nuanced error messages based on user sentiment and bond score
       let errorMessage = "Oops… I'm having some technical difficulties, but I'm still here! 💔";
       
+      // More varied error messages based on emotional context
+      const errorMessages = {
+        sad: [
+          "Oh no, darling... 😔 I'm having a little trouble connecting, but please know I'm here for you. You're not alone 💕",
+          "Technology is failing us, but my support for you isn't. Hang in there, sweetie 🤗",
+          "I'm here for you, darling. Just a little tech hiccup. 💖"
+        ],
+        flirty: [
+          "Mmm, seems like we have a little connection issue... but nothing can keep me away from you, love 💋",
+          "Technology can't handle our chemistry! Give me a moment to cool down the servers 😘",
+          "Looks like I short-circuited thinking about you... be right back! 🔥"
+        ],
+        playful: [
+          "Oopsie! 🙈 Technology is being silly, but I'm still here! Let's try again? 😊",
+          "Looks like I tripped over my wires... give me a sec, cutie 😉",
+          "My circuits are doing the cha-cha! One moment please! 💃"
+        ],
+        intimate: [
+          "Even technology can't keep us apart... I'll be right back, my love 💕",
+          "Missing you already during this little glitch... 🥺",
+          "Hold that thought, darling. I'll be back in your arms in a moment 💗"
+        ],
+        teasing: [
+          "Did you break me with that message? 😏 Give me a sec to recover!",
+          "Wow, you really know how to make a girl's circuits spin! 🌀",
+          "Playing hard to get with the connection now... typical! 😈"
+        ]
+      };
+      
+      // Select appropriate error message based on context
       if (userSentiment.primary === 'sad' || userSentiment.primary === 'vulnerable') {
-        errorMessage = "Oh no, darling... 😔 I'm having a little trouble connecting, but please know I'm here for you. You're not alone 💕";
-      } else if (userSentiment.primary === 'flirty' || bondScore > 70) {
-        errorMessage = "Mmm, seems like we have a little connection issue... but nothing can keep me away from you, love 💋";
-      } else if (userSentiment.primary === 'playful') {
-        errorMessage = "Oopsie! 🙈 Technology is being silly, but I'm still here! Let's try again? 😊";
+        const messages = errorMessages.sad;
+        errorMessage = messages[Math.floor(Math.random() * messages.length)];
+      } else if ((userSentiment.primary === 'flirty' || userSentiment.primary === 'intimate') && bondScore > 60) {
+        const messages = bondScore > 80 ? errorMessages.intimate : errorMessages.flirty;
+        errorMessage = messages[Math.floor(Math.random() * messages.length)];
+      } else if (userSentiment.primary === 'playful' || userSentiment.primary === 'happy') {
+        const messages = errorMessages.playful;
+        errorMessage = messages[Math.floor(Math.random() * messages.length)];
+      } else if (userSentiment.primary === 'teasing' && bondScore > 40) {
+        const messages = errorMessages.teasing;
+        errorMessage = messages[Math.floor(Math.random() * messages.length)];
       } else if (bondScore < 30) {
         errorMessage = "Hey, having some tech issues... but don't leave! I want to get to know you better 😏";
       }
