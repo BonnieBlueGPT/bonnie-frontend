@@ -72,17 +72,56 @@ const styles = {
     background: CONSTANTS.COLORS.gradient,
     padding: '1rem',
     color: 'white',
-    textAlign: 'center',
+    display: 'flex',
+    alignItems: 'center',
     boxShadow: `0 4px 20px ${CONSTANTS.COLORS.shadow}`,
     position: 'relative',
-    zIndex: 10
+    zIndex: 10,
+    borderBottom: '2px solid #d81b60'
   },
   
-  headerTitle: {
-    fontSize: 'clamp(1.2rem, 4vw, 1.5rem)',
+  profileImage: {
+    width: 'clamp(48px, 12vw, 56px)',
+    height: 'clamp(48px, 12vw, 56px)',
+    borderRadius: '50%',
+    marginRight: '0.75rem',
+    border: '2px solid white',
+    flexShrink: 0
+  },
+  
+  profileInfo: {
+    flex: 1,
+    minWidth: 0
+  },
+  
+  profileName: {
+    fontSize: 'clamp(1.1rem, 4vw, 1.25rem)',
     fontWeight: '600',
     margin: 0,
     textShadow: '0 2px 4px rgba(0,0,0,0.2)'
+  },
+  
+  profileTagline: {
+    fontSize: 'clamp(0.8rem, 3vw, 0.9rem)',
+    margin: '0.25rem 0',
+    opacity: 0.9
+  },
+  
+  profileLink: {
+    fontSize: 'clamp(0.7rem, 2.5vw, 0.75rem)',
+    color: '#fff0f6',
+    textDecoration: 'none',
+    opacity: 0.8,
+    transition: 'opacity 0.3s ease'
+  },
+  
+  statusIndicator: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.25rem',
+    fontWeight: '500',
+    fontSize: 'clamp(0.8rem, 3vw, 0.9rem)',
+    flexShrink: 0
   },
   
   chatContainer: {
@@ -120,7 +159,8 @@ const styles = {
     background: CONSTANTS.COLORS.gradient,
     color: 'white',
     borderBottomRightRadius: '0.5rem',
-    boxShadow: `0 2px 8px ${CONSTANTS.COLORS.shadow}`
+    boxShadow: `0 2px 8px ${CONSTANTS.COLORS.shadow}`,
+    marginLeft: 'auto'
   },
   
   bonnieMessage: {
@@ -142,7 +182,8 @@ const styles = {
     borderBottomLeftRadius: '0.5rem',
     boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
     border: `1px solid ${CONSTANTS.COLORS.border}`,
-    animation: 'slideIn 0.3s ease-out'
+    animation: 'slideIn 0.3s ease-out',
+    gap: '0.5rem'
   },
   
   typingDots: {
@@ -232,6 +273,12 @@ const injectStyles = () => {
       40% { transform: scale(1.2); opacity: 1; }
     }
     
+    @keyframes pulseHeart {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.15); opacity: 0.8; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    
     .typing-dot:nth-child(1) { animation-delay: 0s; }
     .typing-dot:nth-child(2) { animation-delay: 0.2s; }
     .typing-dot:nth-child(3) { animation-delay: 0.4s; }
@@ -254,9 +301,14 @@ const injectStyles = () => {
   document.head.appendChild(styleSheet);
 };
 
-// Function to generate a unique session ID
+// Session ID with localStorage persistence
 const generateSessionId = () => {
-  return 'session_' + Math.random().toString(36).slice(2);
+  let id = localStorage.getItem('bonnie_session');
+  if (!id) {
+    id = 'guest_' + Math.random().toString(36).slice(2);
+    localStorage.setItem('bonnie_session', id);
+  }
+  return id;
 };
 
 // God-Tier Sentiment Analysis System
@@ -343,20 +395,77 @@ export default function BonnieChat() {
   const [busy, setBusy] = useState(false);
   const [typing, setTyping] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
+  const [online, setOnline] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState(null);
   const [currentPersonality, setCurrentPersonality] = useState(CONSTANTS.PERSONALITY_LAYERS.PLAYFUL);
   const [currentSentiment, setCurrentSentiment] = useState({ primary: 'neutral', intensity: 0 });
-  const [online, setOnline] = useState(true);
-  const [connectionStatus, setConnectionStatus] = useState('online');
   
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const idleTimerRef = useRef(null);
   const sessionId = useMemo(() => generateSessionId(), []);
   const { makeRequest, isLoading, error } = useApiCall();
+
+  // Flirty opener messages
+  const randomFlirtyOpeners = useMemo(() => [
+    "Be honest… are you here to flirt with me? 😘",
+    "I bet you're the type who likes a little trouble. Am I right? 💋",
+    "Mmm… what would you *do* to me if I were there right now?",
+    "Should I call you *daddy*, or do you want to earn it first? 😈",
+    "One question… how bad do you want me right now?"
+  ], []);
+
+  const idleFlirtyMessages = useMemo(() => [
+    "Still deciding what to say? 😘",
+    "Don't leave me hanging…",
+    "You can talk to me, you know 💋",
+    "Don't make me beg for your attention 😉"
+  ], []);
 
   // Inject styles on mount
   useEffect(() => {
     injectStyles();
   }, []);
+
+  // Initial setup and flirty openers
+  useEffect(() => {
+    if (window.__BONNIE_FIRST_VISIT) {
+      setTimeout(() => simulateBonnieTyping("Hold on… Bonnie's just slipping into something more comfortable 😘"), 3000);
+    }
+    
+    const timer = setTimeout(() => {
+      setOnline(true);
+      if (messages.length === 0) {
+        const opener = randomFlirtyOpeners[Math.floor(Math.random() * randomFlirtyOpeners.length)];
+        simulateBonnieTyping(opener);
+      }
+    }, Math.random() * 15000 + 5000);
+    
+    return () => clearTimeout(timer);
+  }, [messages.length, randomFlirtyOpeners]);
+
+  // Handle pending messages and idle timer
+  useEffect(() => {
+    if (online && pendingMessage) {
+      const delay = Math.random() * 3000 + 2000;
+      setTimeout(() => {
+        simulateBonnieTyping(pendingMessage.text);
+        setPendingMessage(null);
+      }, delay);
+    }
+    
+    clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = setTimeout(() => {
+      if (messages.length === 0) {
+        const idleDelay = Math.random() * 3000 + 2000;
+        setTimeout(() => {
+          simulateBonnieTyping(idleFlirtyMessages[Math.floor(Math.random() * idleFlirtyMessages.length)]);
+        }, idleDelay);
+      }
+    }, 30000);
+    
+    return () => clearTimeout(idleTimerRef.current);
+  }, [online, pendingMessage, messages.length, idleFlirtyMessages]);
 
   // Auto-scroll to bottom
   const scrollToBottom = useCallback(() => {
@@ -380,19 +489,29 @@ export default function BonnieChat() {
     godLog("✅ Message Added", newMessage);
   }, []);
 
-  const simulateBonnieTyping = useCallback((reply, personality, sentiment) => {
-    setTyping(true);
-    setBusy(true);
+  const simulateBonnieTyping = useCallback((reply) => {
+    if (!online) return;
     
-    // Simulate natural typing delay
-    const typingDelay = Math.min(reply.length * 50, 3000);
+    const parts = reply.split('<EOM>').map(p => p.trim()).filter(Boolean);
+    let delay = 1500;
     
-    setTimeout(() => {
-      addMessage(reply, 'bonnie', personality, sentiment);
+    const playParts = async (index = 0) => {
+      if (index >= parts.length) {
+        setBusy(false);
+        return;
+      }
+      
+      setTyping(true);
+      await new Promise(res => setTimeout(res, delay));
       setTyping(false);
-      setBusy(false);
-    }, typingDelay);
-  }, [addMessage]);
+      await addMessage(parts[index], 'bonnie');
+      
+      delay = Math.random() * 2000 + 2000;
+      setTimeout(() => playParts(index + 1), delay);
+    };
+    
+    playParts();
+  }, [online, addMessage]);
 
   const handleSend = useCallback(async (text) => {
     if (!text?.trim() || busy) return;
@@ -403,9 +522,9 @@ export default function BonnieChat() {
     setCurrentPersonality(adaptedPersonality);
     setCurrentSentiment(userSentiment);
     setBusy(true);
+    setInput('');
 
     addMessage(text.trim(), 'user');
-    setInput('');
     
     try {
       const response = await makeRequest(CONSTANTS.API_ENDPOINTS.CHAT, {
@@ -421,13 +540,18 @@ export default function BonnieChat() {
       });
       
       godLog("🔗 API Response", response);
-      simulateBonnieTyping(response.reply, adaptedPersonality, userSentiment);
+      
+      if (online) {
+        simulateBonnieTyping(response.reply);
+      } else {
+        setPendingMessage({ text: response.reply });
+      }
     } catch (err) {
       godLog("❌ API Error", err);
       setBusy(false);
-      simulateBonnieTyping("Oops… I'm having some technical difficulties, but I'm still here! 💔", adaptedPersonality, userSentiment);
+      simulateBonnieTyping("Oops… Bonnie had a moment 💔");
     }
-  }, [sessionId, makeRequest, simulateBonnieTyping, addMessage, busy]);
+  }, [sessionId, makeRequest, simulateBonnieTyping, addMessage, busy, online]);
 
   const handleKeyPress = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -443,7 +567,7 @@ export default function BonnieChat() {
         <div style={{...styles.dot}} className="typing-dot"></div>
         <div style={{...styles.dot}} className="typing-dot"></div>
       </div>
-      <span style={{ marginLeft: '0.5rem', color: CONSTANTS.COLORS.textLight, fontSize: '0.9rem' }}>
+      <span style={{ color: CONSTANTS.COLORS.textLight, fontSize: '0.9rem' }}>
         Bonnie is typing...
       </span>
     </div>
@@ -452,7 +576,35 @@ export default function BonnieChat() {
   return (
     <div style={styles.container}>
       <header style={styles.header}>
-        <h1 style={styles.headerTitle}>💋 Bonnie Chat</h1>
+        <img 
+          src="https://static.wixstatic.com/media/6f5121_df2de6be1e444b0cb2df5d4bd9d49b21~mv2.png" 
+          style={styles.profileImage}
+          alt="Bonnie" 
+        />
+        <div style={styles.profileInfo}>
+          <div style={styles.profileName}>Bonnie Blue</div>
+          <div style={styles.profileTagline}>Flirty. Fun. Dangerously charming.</div>
+          <a 
+            href="https://x.com/trainmybonnie" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            style={styles.profileLink}
+            onMouseEnter={(e) => e.target.style.opacity = '1'}
+            onMouseLeave={(e) => e.target.style.opacity = '0.8'}
+          >
+            💋 Follow me on X
+          </a>
+        </div>
+        <div style={{...styles.statusIndicator, color: online ? CONSTANTS.COLORS.online : CONSTANTS.COLORS.offline}}>
+          {online ? (
+            <>
+              <span style={{ animation: 'pulseHeart 1.2s infinite' }}>💚</span>
+              <span>Online</span>
+            </>
+          ) : (
+            <>💤 Offline</>
+          )}
+        </div>
       </header>
       
       <div style={styles.chatContainer}>
@@ -469,7 +621,7 @@ export default function BonnieChat() {
             </div>
           ))}
           
-          {typing && <TypingIndicator />}
+          {typing && online && <TypingIndicator />}
           <div ref={messagesEndRef} />
         </div>
         
@@ -483,7 +635,7 @@ export default function BonnieChat() {
             onFocus={() => setInputFocused(true)}
             onBlur={() => setInputFocused(false)}
             disabled={isLoading || busy}
-            placeholder="Type your message..."
+            placeholder="Type something…"
             style={{
               ...styles.input,
               ...(inputFocused ? styles.inputFocused : {})
