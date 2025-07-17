@@ -1,4 +1,4 @@
-// 💬 BonnieChat.jsx — v21.1 Always GPT Entry — No More Hardcoded First Visit
+// 💬 BonnieChat.jsx — v21.2 Fixed Entry Timing Bug
 import React, { useEffect, useRef, useState } from 'react';
 
 const CHAT_API_ENDPOINT = 'https://bonnie-backend-server.onrender.com/bonnie-chat';
@@ -33,14 +33,17 @@ export default function BonnieChat() {
           body: JSON.stringify({ session_id })
         });
         const { reply, delay } = await res.json();
-        setTimeout(() => simulateBonnieTyping(reply), delay || 1000);
+        setTimeout(() => {
+          setOnline(true);               // ✅ First mark Bonnie online
+          simulateBonnieTyping(reply);   // ✅ Then trigger her reply
+        }, delay || 1000);
       } catch {
+        setOnline(true);
         simulateBonnieTyping("Hey there 😘");
       }
     };
 
     init();
-    setTimeout(() => setOnline(true), 3000);
   }, []);
 
   useEffect(() => {
