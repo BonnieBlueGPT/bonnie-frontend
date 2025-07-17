@@ -68,13 +68,23 @@ const CONSTANTS = {
     THOUGHTFUL: ['🤔', '💭', '✨', '🌙', '📝', '💡'],
     EXCITED: ['🎊', '🎉', '✨', '🌟', '💫', '🎈']
   },
-  IDLE_MESSAGES: [
-    { text: "Don't keep me waiting 💋", mood: 'flirty', delay: 30000 },
-    { text: "Miss me already? 😏", mood: 'teasing', delay: 45000 },
-    { text: "I'm still here, darling... 💕", mood: 'gentle', delay: 60000 },
-    { text: "Cat got your tongue? 😉", mood: 'playful', delay: 40000 },
-    { text: "Taking your time, I see... 🤔", mood: 'thoughtful', delay: 50000 }
-  ]
+  IDLE_MESSAGES: {
+    low: [ // Bond score < 30
+      { text: "Hey, you still there? 😏", mood: 'teasing', delay: 30000 },
+      { text: "Don't be shy... I don't bite 😉", mood: 'playful', delay: 35000 },
+      { text: "Come on, talk to me! 🙃", mood: 'playful', delay: 40000 }
+    ],
+    medium: [ // Bond score 30-70
+      { text: "Miss me already? 😏", mood: 'teasing', delay: 35000 },
+      { text: "Cat got your tongue? 😉", mood: 'playful', delay: 40000 },
+      { text: "I'm still here, waiting... 💭", mood: 'thoughtful', delay: 45000 }
+    ],
+    high: [ // Bond score > 70
+      { text: "I miss you already, love 💕", mood: 'intimate', delay: 40000 },
+      { text: "Don't keep me waiting, darling 💋", mood: 'flirty', delay: 35000 },
+      { text: "Your silence is killing me... 🥺", mood: 'vulnerable', delay: 50000 }
+    ]
+  }
 };
 
 // Enhanced User Profile Tracking
@@ -421,19 +431,31 @@ export default function BonnieChat() {
   const [connectionStatus, setConnectionStatus] = useState('connected');
   const [inputFocused, setInputFocused] = useState(false);
   const [buttonHovered, setButtonHovered] = useState(false);
+  const [bondScore, setBondScore] = useState(50);
+  const [lastActivity, setLastActivity] = useState(Date.now());
+  const [idleMessageSent, setIdleMessageSent] = useState(false);
   const sessionId = useMemo(() => generateSessionId(), []);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const idleTimeoutRef = useRef(null);
 
   const { makeRequest, isLoading, error } = useApiCall();
 
-  // Auto-scroll to bottom when new messages arrive
+  // Auto-scroll to bottom when new messages arrive with easing
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ 
+      behavior: 'smooth',
+      block: 'end',
+      inline: 'nearest'
+    });
   };
 
   useEffect(() => {
-    scrollToBottom();
+    // Add slight delay for better visual flow
+    const scrollTimer = setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+    return () => clearTimeout(scrollTimer);
   }, [messages, typing]);
 
   // Handle mobile viewport resize when keyboard appears
@@ -463,11 +485,48 @@ export default function BonnieChat() {
 
   const simulateBonnieTyping = useCallback((reply, personality, sentiment) => {
     setTyping(true);
-    const typingDuration = Math.min(reply.length * 30, 3000); // Dynamic typing duration
+    
+    // More granular typing speeds based on emotion
+    const emotionSpeeds = {
+      excited: 20 + Math.random() * 10,
+      playful: 25 + Math.random() * 15,
+      flirty: 35 + Math.random() * 20,
+      normal: 40 + Math.random() * 20,
+      thoughtful: 60 + Math.random() * 30,
+      serious: 70 + Math.random() * 40,
+      vulnerable: 80 + Math.random() * 40,
+      supportive: 50 + Math.random() * 25
+    };
+    
+    // Determine speed based on sentiment
+    let charSpeed = emotionSpeeds.normal;
+    if (sentiment?.primary === 'happy' || sentiment?.primary === 'excited') {
+      charSpeed = emotionSpeeds.excited;
+    } else if (sentiment?.primary === 'sad' || sentiment?.primary === 'vulnerable') {
+      charSpeed = emotionSpeeds.vulnerable;
+    } else if (sentiment?.primary === 'serious') {
+      charSpeed = emotionSpeeds.serious;
+    } else if (sentiment?.primary === 'flirty') {
+      charSpeed = emotionSpeeds.flirty;
+    } else if (sentiment?.primary === 'playful') {
+      charSpeed = emotionSpeeds.playful;
+    }
+    
+    // Calculate duration with pauses for punctuation
+    const baseTypingDuration = reply.length * charSpeed;
+    const punctuationPauses = (reply.match(/[,.!?;:]/g) || []).length * 200;
+    const questionPauses = (reply.match(/\?/g) || []).length * 300;
+    const ellipsisPauses = (reply.match(/\.\.\./g) || []).length * 500;
+    
+    const totalDuration = Math.min(
+      baseTypingDuration + punctuationPauses + questionPauses + ellipsisPauses,
+      5000
+    );
+    
     setTimeout(() => {
       addMessage(reply, 'bonnie', personality, sentiment);
       setTyping(false);
-    }, typingDuration);
+    }, totalDuration);
   }, [addMessage]);
 
   const handleSend = useCallback(async () => {
@@ -501,7 +560,21 @@ export default function BonnieChat() {
       simulateBonnieTyping(response.reply || "I'm here for you, darling 💕", adaptedPersonality, userSentiment);
     } catch (err) {
       godLog("❌ API Error", err);
-      simulateBonnieTyping("Oops… I'm having some technical difficulties, but I'm still here! 💔", adaptedPersonality, userSentiment);
+      
+      // Emotionally nuanced error messages based on user sentiment and bond score
+      let errorMessage = "Oops… I'm having some technical difficulties, but I'm still here! 💔";
+      
+      if (userSentiment.primary === 'sad' || userSentiment.primary === 'vulnerable') {
+        errorMessage = "Oh no, darling... 😔 I'm having a little trouble connecting, but please know I'm here for you. You're not alone 💕";
+      } else if (userSentiment.primary === 'flirty' || bondScore > 70) {
+        errorMessage = "Mmm, seems like we have a little connection issue... but nothing can keep me away from you, love 💋";
+      } else if (userSentiment.primary === 'playful') {
+        errorMessage = "Oopsie! 🙈 Technology is being silly, but I'm still here! Let's try again? 😊";
+      } else if (bondScore < 30) {
+        errorMessage = "Hey, having some tech issues... but don't leave! I want to get to know you better 😏";
+      }
+      
+      simulateBonnieTyping(errorMessage, adaptedPersonality, userSentiment);
     } finally {
       setBusy(false);
     }
@@ -509,10 +582,104 @@ export default function BonnieChat() {
 
   return (
     <div style={styles.container}>
-      {/* Header */}
-      <header style={styles.header}>
-        <h1 style={styles.title}>Bonnie 💋</h1>
-        <div style={styles.statusDot} title={online ? "Online" : "Connecting..."}></div>
+      {/* Header with Profile */}
+      <header style={{
+        ...styles.header,
+        padding: '0.75rem 1rem',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '1rem',
+      }}>
+        {/* Profile Section */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          flex: 1,
+        }}>
+          {/* Profile Picture Container */}
+          <div style={{
+            position: 'relative',
+            width: '50px',
+            height: '50px',
+          }}>
+            <img 
+              src="https://ui-avatars.com/api/?name=Bonnie&background=e91e63&color=fff&size=100&rounded=true&bold=true"
+              alt="Bonnie"
+              style={{
+                width: '100%',
+                height: '100%',
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: `3px solid ${online ? '#28a745' : '#aaa'}`,
+                transition: 'all 0.5s ease',
+                boxShadow: online ? '0 0 0 3px rgba(40, 167, 69, 0.2)' : '0 0 0 3px rgba(170, 170, 170, 0.2)',
+              }}
+            />
+            {/* Online Status Dot */}
+            <div style={{
+              position: 'absolute',
+              bottom: '2px',
+              right: '2px',
+              width: '12px',
+              height: '12px',
+              borderRadius: '50%',
+              background: online ? '#28a745' : '#aaa',
+              border: '2px solid white',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+            }}></div>
+          </div>
+          
+          {/* Name and Bond Level */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '2px',
+          }}>
+            <h1 style={{
+              ...styles.title,
+              fontSize: '1.1rem',
+              margin: 0,
+            }}>Bonnie</h1>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              fontSize: '0.75rem',
+            }}>
+              <span style={{
+                color: online ? '#28a745' : '#aaa',
+                fontWeight: '500',
+              }}>
+                {online ? 'Online' : 'Away'}
+              </span>
+              <span style={{ color: '#999' }}>•</span>
+              <span style={{
+                color: '#666',
+                fontStyle: 'italic',
+              }}>
+                Bond: {Math.round(bondScore)}%
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        {/* Optional menu or settings button */}
+        <button style={{
+          background: 'none',
+          border: 'none',
+          color: '#999',
+          fontSize: '1.25rem',
+          cursor: 'pointer',
+          padding: '0.5rem',
+          borderRadius: '50%',
+          transition: 'all 0.3s ease',
+          ':hover': {
+            background: 'rgba(0,0,0,0.05)',
+          }
+        }}>
+          ⋮
+        </button>
       </header>
 
       {/* Messages */}
