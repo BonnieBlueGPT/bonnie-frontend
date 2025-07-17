@@ -7,7 +7,13 @@ const CONSTANTS = {
     CHAT: 'https://bonnie-backend-server.onrender.com/bonnie-chat',
     ENTRY: 'https://bonnie-backend-server.onrender.com/bonnie-entry'
   },
-  TYPING_SPEEDS: { slow: 120, normal: 64, fast: 35 },
+  TYPING_SPEEDS: { 
+    slow: 120, 
+    normal: 64, 
+    fast: 35,
+    thoughtful: 150,
+    excited: 25 
+  },
   IDLE_TIMEOUT: 30000,
   MAX_MESSAGES: 100,
   COLORS: {
@@ -15,7 +21,17 @@ const CONSTANTS = {
     online: '#28a745',
     offline: '#aaa',
     background: '#fff0f6',
-    border: '#ffe6f0'
+    border: '#ffe6f0',
+    // Emotional color palette
+    emotions: {
+      flirty: { bg: '#FFE5EC', bubble: '#FFC0CB', gradient: 'linear-gradient(135deg, #FF69B4 0%, #FFB6C1 100%)' },
+      serious: { bg: '#F5F5F5', bubble: '#E8E8E8', gradient: 'linear-gradient(135deg, #D3D3D3 0%, #F5F5F5 100%)' },
+      playful: { bg: '#FFF9E6', bubble: '#FFEB99', gradient: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)' },
+      teasing: { bg: '#FFE5E5', bubble: '#FF9999', gradient: 'linear-gradient(135deg, #FF6347 0%, #FF7F50 100%)' },
+      intimate: { bg: '#F8E5FF', bubble: '#E6B3FF', gradient: 'linear-gradient(135deg, #DA70D6 0%, #DDA0DD 100%)' },
+      supportive: { bg: '#E5F3FF', bubble: '#B3D9FF', gradient: 'linear-gradient(135deg, #87CEEB 0%, #87CEFA 100%)' },
+      happy: { bg: '#FFF0F6', bubble: '#FFE6F0', gradient: 'linear-gradient(135deg, #FF1493 0%, #FF69B4 100%)' }
+    }
   },
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 1000,
@@ -25,7 +41,9 @@ const CONSTANTS = {
     TEASING: 'teasing',
     GENTLE: 'gentle',
     PASSIONATE: 'passionate',
-    PLAYFUL: 'playful'
+    PLAYFUL: 'playful',
+    THOUGHTFUL: 'thoughtful',
+    MYSTERIOUS: 'mysterious'
   },
   SENTIMENT_TYPES: {
     FLIRTY: 'flirty',
@@ -35,63 +53,150 @@ const CONSTANTS = {
     PLAYFUL: 'playful',
     SERIOUS: 'serious',
     TEASING: 'teasing',
-    VULNERABLE: 'vulnerable'
+    VULNERABLE: 'vulnerable',
+    EXCITED: 'excited',
+    THOUGHTFUL: 'thoughtful'
   },
   EMOJI_CONTEXTS: {
-    FLIRTY: ['😘', '😏', '😉', '💋', '🔥'],
-    ROMANTIC: ['💖', '💕', '😍', '🥰', '💘'],
-    PLAYFUL: ['😜', '😋', '🤪', '😄', '😊'],
-    SUPPORTIVE: ['🥺', '💌', '🤗', '💜', '✨'],
-    TEASING: ['😏', '😈', '🙄', '😌', '🤭'],
-    PASSIONATE: ['🔥', '💫', '😍', '💖', '🌹'],
-    GENTLE: ['🥰', '💕', '🌸', '💫', '🦋']
-  }
+    FLIRTY: ['😘', '😏', '😉', '💋', '🔥', '😍'],
+    ROMANTIC: ['💖', '💕', '😍', '🥰', '💘', '💝'],
+    PLAYFUL: ['😜', '😋', '🤪', '😄', '😊', '🎉'],
+    SUPPORTIVE: ['🥺', '💌', '🤗', '💜', '✨', '🌟'],
+    TEASING: ['😏', '😈', '🙄', '😌', '🤭', '😎'],
+    PASSIONATE: ['🔥', '💫', '😍', '💖', '🌹', '❤️‍🔥'],
+    GENTLE: ['🥰', '💕', '🌸', '💫', '🦋', '🌺'],
+    THOUGHTFUL: ['🤔', '💭', '✨', '🌙', '📝', '💡'],
+    EXCITED: ['🎊', '🎉', '✨', '🌟', '💫', '🎈']
+  },
+  IDLE_MESSAGES: [
+    { text: "Don't keep me waiting 💋", mood: 'flirty', delay: 30000 },
+    { text: "Miss me already? 😏", mood: 'teasing', delay: 45000 },
+    { text: "I'm still here, darling... 💕", mood: 'gentle', delay: 60000 },
+    { text: "Cat got your tongue? 😉", mood: 'playful', delay: 40000 },
+    { text: "Taking your time, I see... 🤔", mood: 'thoughtful', delay: 50000 }
+  ]
 };
+
+// Enhanced User Profile Tracking
+const createUserProfile = () => ({
+  bondScore: 0,
+  emotionalHistory: [],
+  conversationDepth: 0,
+  lastInteraction: Date.now(),
+  moodTrend: 'neutral',
+  preferences: {
+    responseStyle: 'balanced',
+    intimacyLevel: 0
+  }
+});
 
 // Function to generate a unique session ID
 const generateSessionId = () => {
   return 'session_' + Math.random().toString(36).slice(2);
 };
 
-// God-Tier Sentiment Analysis System
+// Enhanced Sentiment Analysis with Emotional Intelligence
 const analyzeSentiment = (text) => {
   const lowerText = text.toLowerCase();
-  // Flirty indicators, Intimate, Sad/vulnerable, Playful, and Teasing words
-  const flirtyWords = ['sexy', 'hot', 'beautiful', 'gorgeous', 'cute', 'kiss', 'love', 'baby', 'darling', 'honey'];
-  const flirtyScore = flirtyWords.filter(word => lowerText.includes(word)).length;
   
-  const intimateWords = ['miss', 'need', 'want', 'desire', 'close', 'together', 'feel', 'heart'];
-  const intimateScore = intimateWords.filter(word => lowerText.includes(word)).length;
-  
-  const sadWords = ['sad', 'hurt', 'lonely', 'upset', 'tired', 'stressed', 'difficult', 'hard'];
-  const sadScore = sadWords.filter(word => lowerText.includes(word)).length;
-  
-  const playfulWords = ['haha', 'lol', 'funny', 'joke', 'silly', 'crazy', 'fun', 'play'];
-  const playfulScore = playfulWords.filter(word => lowerText.includes(word)).length;
-  
-  const teasingWords = ['maybe', 'perhaps', 'guess', 'see', 'hmm', 'interesting', 'really'];
-  const teasingScore = teasingWords.filter(word => lowerText.includes(word)).length;
-
-  const scores = {
-    [CONSTANTS.SENTIMENT_TYPES.FLIRTY]: flirtyScore * 2,
-    [CONSTANTS.SENTIMENT_TYPES.INTIMATE]: intimateScore * 2,
-    [CONSTANTS.SENTIMENT_TYPES.SAD]: sadScore * 3,
-    [CONSTANTS.SENTIMENT_TYPES.PLAYFUL]: playfulScore,
-    [CONSTANTS.SENTIMENT_TYPES.TEASING]: teasingScore,
-    [CONSTANTS.SENTIMENT_TYPES.HAPPY]: (text.includes('!') ? 1 : 0) + playfulScore,
-    [CONSTANTS.SENTIMENT_TYPES.SERIOUS]: lowerText.length > 100 ? 1 : 0,
-    [CONSTANTS.SENTIMENT_TYPES.VULNERABLE]: sadScore * 2
+  // Expanded word lists for better emotional detection
+  const emotionalIndicators = {
+    flirty: ['sexy', 'hot', 'beautiful', 'gorgeous', 'cute', 'kiss', 'love', 'baby', 'darling', 'honey', 'sweetheart', 'babe'],
+    intimate: ['miss', 'need', 'want', 'desire', 'close', 'together', 'feel', 'heart', 'soul', 'deep', 'connection'],
+    sad: ['sad', 'hurt', 'lonely', 'upset', 'tired', 'stressed', 'difficult', 'hard', 'down', 'blue', 'empty'],
+    playful: ['haha', 'lol', 'funny', 'joke', 'silly', 'crazy', 'fun', 'play', 'laugh', 'giggle', 'tease'],
+    teasing: ['maybe', 'perhaps', 'guess', 'see', 'hmm', 'interesting', 'really', 'sure', 'oh really'],
+    excited: ['wow', 'amazing', 'awesome', 'great', 'fantastic', 'wonderful', 'incredible', 'yes', 'love it'],
+    thoughtful: ['think', 'wonder', 'consider', 'believe', 'understand', 'realize', 'know', 'question'],
+    supportive: ['help', 'support', 'care', 'understand', 'here for you', 'listen', 'comfort']
   };
 
+  // Calculate scores for each emotion
+  const scores = {};
+  Object.entries(emotionalIndicators).forEach(([emotion, words]) => {
+    scores[emotion] = words.filter(word => lowerText.includes(word)).length;
+  });
+
+  // Boost scores based on punctuation and context
+  if (text.includes('!')) scores.excited = (scores.excited || 0) + 2;
+  if (text.includes('?')) scores.thoughtful = (scores.thoughtful || 0) + 1;
+  if (text.includes('...')) scores.thoughtful = (scores.thoughtful || 0) + 1;
+  if (text.length > 100) scores.thoughtful = (scores.thoughtful || 0) + 1;
+  if (text.includes('❤') || text.includes('💕')) scores.intimate = (scores.intimate || 0) + 2;
+
+  // Determine primary sentiment
   const primarySentiment = Object.keys(scores).reduce((a, b) => 
-    scores[a] > scores[b] ? a : b
+    (scores[a] || 0) > (scores[b] || 0) ? a : b, 'neutral'
   );
+
+  const intensity = Math.max(...Object.values(scores), 1);
 
   return {
     primary: primarySentiment,
-    intensity: Math.max(...Object.values(scores)),
-    scores
+    intensity,
+    scores,
+    complexity: Object.values(scores).filter(s => s > 0).length
   };
+};
+
+// Dynamic Personality Selection based on context
+const selectPersonality = (bondScore, userSentiment, conversationHistory) => {
+  const { primary, intensity } = userSentiment;
+  
+  // Personality mapping based on user sentiment and bond level
+  const personalityMap = {
+    flirty: bondScore > 50 ? CONSTANTS.PERSONALITY_LAYERS.PASSIONATE : CONSTANTS.PERSONALITY_LAYERS.FLIRTATIOUS,
+    intimate: bondScore > 70 ? CONSTANTS.PERSONALITY_LAYERS.PASSIONATE : CONSTANTS.PERSONALITY_LAYERS.GENTLE,
+    sad: CONSTANTS.PERSONALITY_LAYERS.SUPPORTIVE,
+    playful: CONSTANTS.PERSONALITY_LAYERS.PLAYFUL,
+    teasing: CONSTANTS.PERSONALITY_LAYERS.TEASING,
+    thoughtful: CONSTANTS.PERSONALITY_LAYERS.THOUGHTFUL,
+    excited: CONSTANTS.PERSONALITY_LAYERS.PLAYFUL,
+    neutral: bondScore > 30 ? CONSTANTS.PERSONALITY_LAYERS.FLIRTATIOUS : CONSTANTS.PERSONALITY_LAYERS.GENTLE
+  };
+
+  return personalityMap[primary] || CONSTANTS.PERSONALITY_LAYERS.GENTLE;
+};
+
+// Calculate typing speed based on mood and message
+const calculateTypingSpeed = (sentiment, messageLength, personality) => {
+  const baseSpeed = {
+    [CONSTANTS.PERSONALITY_LAYERS.PLAYFUL]: CONSTANTS.TYPING_SPEEDS.fast,
+    [CONSTANTS.PERSONALITY_LAYERS.THOUGHTFUL]: CONSTANTS.TYPING_SPEEDS.thoughtful,
+    [CONSTANTS.PERSONALITY_LAYERS.PASSIONATE]: CONSTANTS.TYPING_SPEEDS.normal,
+    [CONSTANTS.PERSONALITY_LAYERS.SUPPORTIVE]: CONSTANTS.TYPING_SPEEDS.slow,
+    [CONSTANTS.PERSONALITY_LAYERS.FLIRTATIOUS]: CONSTANTS.TYPING_SPEEDS.normal,
+    [CONSTANTS.PERSONALITY_LAYERS.TEASING]: CONSTANTS.TYPING_SPEEDS.fast,
+    [CONSTANTS.PERSONALITY_LAYERS.GENTLE]: CONSTANTS.TYPING_SPEEDS.slow,
+    [CONSTANTS.PERSONALITY_LAYERS.MYSTERIOUS]: CONSTANTS.TYPING_SPEEDS.thoughtful
+  };
+
+  let speed = baseSpeed[personality] || CONSTANTS.TYPING_SPEEDS.normal;
+  
+  // Adjust for message length
+  if (messageLength > 100) speed *= 1.2;
+  if (messageLength < 20) speed *= 0.8;
+  
+  // Add variability
+  return speed + (Math.random() * 20 - 10);
+};
+
+// Enhanced color selection based on emotional state
+const getEmotionalColors = (sentiment, personality) => {
+  const emotionMap = {
+    flirty: CONSTANTS.COLORS.emotions.flirty,
+    serious: CONSTANTS.COLORS.emotions.serious,
+    playful: CONSTANTS.COLORS.emotions.playful,
+    teasing: CONSTANTS.COLORS.emotions.teasing,
+    intimate: CONSTANTS.COLORS.emotions.intimate,
+    sad: CONSTANTS.COLORS.emotions.supportive,
+    supportive: CONSTANTS.COLORS.emotions.supportive,
+    happy: CONSTANTS.COLORS.emotions.happy,
+    excited: CONSTANTS.COLORS.emotions.playful,
+    thoughtful: CONSTANTS.COLORS.emotions.serious
+  };
+
+  return emotionMap[sentiment] || emotionMap.happy;
 };
 
 // Debugging helper function
@@ -373,7 +478,7 @@ export default function BonnieChat() {
     setInput('');
     
     const userSentiment = analyzeSentiment(text);
-    const adaptedPersonality = CONSTANTS.PERSONALITY_LAYERS.FLIRTATIOUS; // Simplified for now
+    const adaptedPersonality = selectPersonality(0, userSentiment, []); // Simplified for now
 
     setCurrentPersonality(adaptedPersonality);
     setCurrentSentiment(userSentiment);
