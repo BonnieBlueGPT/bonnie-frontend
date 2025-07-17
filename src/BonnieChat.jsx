@@ -1,4 +1,4 @@
-// 💬 BonnieChat.jsx — v21.2 Fixed Entry Timing Bug
+// 💬 BonnieChat.jsx — v21.3 Emotion + Intro Fix
 import React, { useEffect, useRef, useState } from 'react';
 
 const CHAT_API_ENDPOINT = 'https://bonnie-backend-server.onrender.com/bonnie-chat';
@@ -34,15 +34,14 @@ export default function BonnieChat() {
         });
         const { reply, delay } = await res.json();
         setTimeout(() => {
-          setOnline(true);               // ✅ First mark Bonnie online
-          simulateBonnieTyping(reply);   // ✅ Then trigger her reply
+          setOnline(true);
+          simulateBonnieTyping(reply);
         }, delay || 1000);
       } catch {
         setOnline(true);
         simulateBonnieTyping("Hey there 😘");
       }
     };
-
     init();
   }, []);
 
@@ -109,22 +108,43 @@ export default function BonnieChat() {
 
     const parts = raw.split(/<EOM(?:::(.*?))?>/).map((chunk, index) => {
       if (index % 2 === 0) {
-        return { text: chunk.trim(), pause: 1200, speed: 'normal' };
+        return { text: chunk.trim(), pause: 1200, speed: 'normal', emotion: 'neutral' };
       } else {
         const pause = /pause=(\d+)/.exec(chunk)?.[1];
         const speed = /speed=(\w+)/.exec(chunk)?.[1];
-        return { meta: true, pause: pause ? parseInt(pause) : 1000, speed: speed || 'normal' };
+        const emotion = /emotion=(\w+)/.exec(chunk)?.[1];
+        console.log("🧠 Parsed Meta — pause:", pause, "speed:", speed, "emotion:", emotion);
+        return {
+          meta: true,
+          pause: pause ? parseInt(pause) : 1000,
+          speed: speed || 'normal',
+          emotion: emotion || 'neutral'
+        };
       }
     });
 
     const finalParts = [];
     for (let i = 0; i < parts.length; i++) {
       if (!parts[i].meta) {
-        const pause = parts[i + 1]?.pause ?? 1000;
-        const speed = parts[i + 1]?.speed ?? 'normal';
-        finalParts.push({ ...parts[i], pause, speed });
+        const next = parts[i + 1] || {};
+        finalParts.push({
+          ...parts[i],
+          pause: next.pause ?? 1000,
+          speed: next.speed ?? 'normal',
+          emotion: next.emotion ?? 'neutral'
+        });
+      } else if (i > 0 && !parts[i + 1]) {
+        const prev = parts[i - 1];
+        finalParts.push({
+          ...prev,
+          pause: parts[i].pause ?? 1000,
+          speed: parts[i].speed ?? 'normal',
+          emotion: parts[i].emotion ?? 'neutral'
+        });
       }
     }
+
+    console.log("💬 Final Message Parts:", finalParts);
 
     (async function play(index = 0) {
       if (index >= finalParts.length) {
@@ -139,6 +159,7 @@ export default function BonnieChat() {
       await new Promise(res => setTimeout(res, typingTime));
       setTyping(false);
       await addMessage(part.text, 'bonnie');
+      console.log("✅ Bonnie added message:", part.text);
       setTimeout(() => play(index + 1), 400);
     })();
   }
