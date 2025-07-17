@@ -1,4 +1,3 @@
-// 💬 BonnieChat.jsx — Fixed Empty Message Parts Issue
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 
 // Constants
@@ -31,97 +30,54 @@ const generateSessionId = () => {
   return id;
 };
 
-// FIXED: Improved message parsing with empty part filtering
+// FIXED: Completely rewritten message parsing with proper empty part filtering
 const parseMessageParts = (raw) => {
   console.log("🔍 Raw message input:", raw);
   
-  const parts = raw.split(/<EOM(?:::(.*?))?>/).map((chunk, index) => {
-    if (index % 2 === 0) {
-      // Text part
-      const text = chunk.trim();
-      return { 
-        text, 
-        pause: 1200, 
-        speed: 'normal', 
-        emotion: 'neutral',
-        isEmpty: text === ''
-      };
-    } else {
-      // Metadata part
-      const pause = /pause=(\d+)/.exec(chunk)?.[1];
-      const speed = /speed=(\w+)/.exec(chunk)?.[1];
-      const emotion = /emotion=(\w+)/.exec(chunk)?.[1];
-      console.log("🧠 Parsed Meta — pause:", pause, "speed:", speed, "emotion:", emotion);
-      return {
-        meta: true,
-        pause: pause ? parseInt(pause) : 1000,
-        speed: speed || 'normal',
-        emotion: emotion || 'neutral'
-      };
-    }
-  });
-
-  // Process parts and apply metadata to text parts
-  const processedParts = [];
-  for (let i = 0; i < parts.length; i++) {
-    const current = parts[i];
-    
-    if (!current.meta && !current.isEmpty) {
-      // This is a non-empty text part
-      const nextMeta = parts[i + 1];
-      
-      processedParts.push({
-        text: current.text,
-        pause: nextMeta?.pause ?? current.pause,
-        speed: nextMeta?.speed ?? current.speed,
-        emotion: nextMeta?.emotion ?? current.emotion
-      });
-    }
-    // Skip empty text parts and metadata parts
-  }
-
-  console.log("💬 Processed Message Parts (empty parts filtered):", processedParts);
-  return processedParts;
-};
-
-// Alternative parsing approach for more complex cases
-const parseMessagePartsAdvanced = (raw) => {
-  console.log("🔍 Advanced parsing for:", raw);
+  // Split by EOM tags and get all segments
+  const segments = raw.split(/<EOM(?:::(.*?))?>/).filter(Boolean);
+  console.log("📦 Raw segments:", segments);
   
-  // Split by EOM tags and process
-  const segments = raw.split(/<EOM(?:::(.*?))?>/).filter(segment => segment.trim() !== '');
   const finalParts = [];
-  
-  let currentText = '';
   let currentMeta = { pause: 1000, speed: 'normal', emotion: 'neutral' };
   
   for (let i = 0; i < segments.length; i++) {
     const segment = segments[i].trim();
     
-    // Check if this segment contains metadata
-    const metaMatch = /(?:pause=(\d+))?(?:.*?speed=(\w+))?(?:.*?emotion=(\w+))?/.exec(segment);
+    // Check if this segment is metadata
+    const metaMatch = segment.match(/(?:pause=(\d+))?(?:.*?speed=(\w+))?(?:.*?emotion=(\w+))?/);
+    const hasMetadata = metaMatch && (metaMatch[1] || metaMatch[2] || metaMatch[3]);
     
-    if (metaMatch && (metaMatch[1] || metaMatch[2] || metaMatch[3])) {
-      // This is a metadata segment
+    if (hasMetadata) {
+      // This is a metadata segment - update current metadata
       if (metaMatch[1]) currentMeta.pause = parseInt(metaMatch[1]);
       if (metaMatch[2]) currentMeta.speed = metaMatch[2];
       if (metaMatch[3]) currentMeta.emotion = metaMatch[3];
       
-      console.log("🧠 Updated meta:", currentMeta);
+      console.log("🧠 Updated metadata:", currentMeta);
     } else if (segment.length > 0) {
-      // This is a text segment
+      // This is a text segment - only add if not empty
       finalParts.push({
         text: segment,
-        ...currentMeta
+        pause: currentMeta.pause,
+        speed: currentMeta.speed,
+        emotion: currentMeta.emotion
       });
+      
+      console.log("✅ Added valid part:", { text: segment, ...currentMeta });
       
       // Reset metadata for next part
       currentMeta = { pause: 1000, speed: 'normal', emotion: 'neutral' };
+    } else {
+      console.log("⚠️ Skipped empty segment at index", i);
     }
   }
   
-  console.log("💬 Advanced parsed parts:", finalParts);
-  return finalParts;
+  // Final safety filter - remove any parts that somehow have empty text
+  const validParts = finalParts.filter(part => part.text && part.text.trim() !== '');
+  
+  console.log("💬 Final valid message parts:", validParts);
+  return validParts;
 };
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -229,20 +185,28 @@ export default function BonnieChat() {
   
   const { makeRequest, isLoading, error } = useApiCall();
 
-  // Optimized message management with history limits
+  // Enhanced message management with validation
   const addMessage = useCallback((text, sender) => {
-    // Additional validation to prevent empty messages
-    if (!text || text.trim() === '') {
-      console.warn("⚠️ Attempted to add empty message, skipping");
+    // Strict validation to prevent empty messages
+    if (!text || typeof text !== 'string' || text.trim() === '') {
+      console.warn("⚠️ Attempted to add empty/invalid message, skipping:", text);
+      return;
+    }
+
+    const cleanText = text.trim();
+    if (cleanText.length === 0) {
+      console.warn("⚠️ Message became empty after trimming, skipping");
       return;
     }
 
     const newMessage = {
       id: Date.now() + Math.random(),
       sender,
-      text: text.trim(),
+      text: cleanText,
       timestamp: Date.now()
     };
+    
+    console.log("✅ Adding message:", newMessage);
     
     setMessages(prevMessages => {
       const newMessages = [...prevMessages, newMessage];
@@ -322,62 +286,114 @@ export default function BonnieChat() {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, typing]);
 
-  // FIXED: Improved typing simulation with empty message filtering
+  // FIXED: Improved typing simulation with bulletproof empty part filtering
   const simulateBonnieTyping = useCallback((raw) => {
-    if (!online) return;
+    if (!online) {
+      console.log("⚠️ Not online, skipping typing simulation");
+      return;
+    }
 
     // Cancel any existing typing process
     if (typingProcessRef.current) {
       clearTimeout(typingProcessRef.current);
+      typingProcessRef.current = null;
     }
 
-    // Parse message parts and filter out empty ones
-    const parts = parseMessageParts(raw);
-    
-    // Additional safety check: filter out any parts with empty text
-    const validParts = parts.filter(part => part.text && part.text.trim() !== '');
-    
-    if (validParts.length === 0) {
-      console.warn("⚠️ No valid message parts found, skipping typing simulation");
+    // Validate input
+    if (!raw || typeof raw !== 'string' || raw.trim() === '') {
+      console.warn("⚠️ Invalid or empty raw message, skipping:", raw);
       setBusy(false);
       return;
     }
 
-    console.log("💬 Valid message parts to process:", validParts);
+    // Parse message parts with robust filtering
+    let parts;
+    try {
+      parts = parseMessageParts(raw);
+    } catch (error) {
+      console.error("❌ Error parsing message parts:", error);
+      // Fallback to simple text
+      const fallbackText = raw.trim();
+      if (fallbackText) {
+        parts = [{ text: fallbackText, pause: 1000, speed: 'normal', emotion: 'neutral' }];
+      } else {
+        setBusy(false);
+        return;
+      }
+    }
+    
+    // Triple-check: filter out any empty parts that might have slipped through
+    const validParts = parts.filter(part => {
+      const isValid = part && 
+                     typeof part.text === 'string' && 
+                     part.text.trim() !== '' && 
+                     part.text.length > 0;
+      
+      if (!isValid) {
+        console.warn("⚠️ Filtering out invalid part:", part);
+      }
+      
+      return isValid;
+    });
+    
+    if (validParts.length === 0) {
+      console.warn("⚠️ No valid message parts found after filtering, skipping typing simulation");
+      setBusy(false);
+      return;
+    }
+
+    console.log(`🚀 Starting typing simulation for ${validParts.length} valid parts:`, validParts);
 
     let currentIndex = 0;
     const processNextPart = async () => {
       if (currentIndex >= validParts.length) {
+        console.log("✅ Completed typing simulation");
         setBusy(false);
+        setTyping(false);
         typingProcessRef.current = null;
         return;
       }
 
       const part = validParts[currentIndex];
       
-      // Skip if somehow an empty part made it through
-      if (!part.text || part.text.trim() === '') {
-        console.warn("⚠️ Skipping empty part at index", currentIndex);
+      // Final safety check before processing each part
+      if (!part || !part.text || part.text.trim() === '') {
+        console.warn(`⚠️ Skipping invalid part at index ${currentIndex}:`, part);
         currentIndex++;
-        setTimeout(processNextPart, 100);
+        typingProcessRef.current = setTimeout(processNextPart, 100);
         return;
       }
 
-      console.log(`✅ Processing part ${currentIndex + 1}/${validParts.length}:`, part);
+      console.log(`✅ Processing part ${currentIndex + 1}/${validParts.length}:`, {
+        text: part.text,
+        pause: part.pause,
+        speed: part.speed,
+        emotion: part.emotion
+      });
       
-      await sleep(part.pause);
+      // Pause before typing
+      await sleep(part.pause || 1000);
       
+      // Show typing indicator
       setTyping(true);
+      
+      // Calculate typing time based on text length and speed
       const typingTime = part.text.length * (CONSTANTS.TYPING_SPEEDS[part.speed] || CONSTANTS.TYPING_SPEEDS.normal);
       await sleep(typingTime);
       
+      // Hide typing indicator
       setTyping(false);
+      
+      // Add the message
       addMessage(part.text, 'bonnie');
       
+      // Move to next part
       currentIndex++;
       typingProcessRef.current = setTimeout(processNextPart, 400);
     };
 
+    // Start processing
+    setBusy(true);
     processNextPart();
   }, [online, addMessage]);
 
@@ -408,6 +424,7 @@ export default function BonnieChat() {
       }
     } catch (err) {
       console.error('Failed to send message:', err);
+      setBusy(false);
       simulateBonnieTyping("Oops… Bonnie had a moment 💔");
     }
   }, [busy, sessionId, makeRequest, online, simulateBonnieTyping, addMessage]);
