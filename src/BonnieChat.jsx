@@ -1,4 +1,4 @@
-// 💬 BonnieChat.jsx — v20.2 Galatea Entry Sync Patch
+// 💬 BonnieChat.jsx — v20.2 Final Galatea Entry Patch
 import React, { useEffect, useRef, useState } from 'react';
 
 const CHAT_API_ENDPOINT = 'https://bonnie-backend-server.onrender.com/bonnie-chat';
@@ -45,29 +45,9 @@ export default function BonnieChat() {
     };
 
     init();
-
     setTimeout(() => {
       setOnline(true);
     }, 3000);
-  }, []);
-
-  // 🔁 SYSTEM PROMPT SYNC PATCH — v20.2
-  useEffect(() => {
-    if (messages.length === 0 && !window.__BONNIE_ENTRY_TRIGGERED) {
-      window.__BONNIE_ENTRY_TRIGGERED = true;
-      fetch(ENTRY_API_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id })
-      })
-        .then(res => res.json())
-        .then(({ reply, delay }) => {
-          setTimeout(() => simulateBonnieTyping(reply), delay || 1200);
-        })
-        .catch(() => {
-          simulateBonnieTyping("Hey there 😘");
-        });
-    }
   }, []);
 
   useEffect(() => {
@@ -157,8 +137,7 @@ export default function BonnieChat() {
 
   return (
     <div style={{ fontFamily: 'Segoe UI', height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* HEADER AND CHAT BUBBLES REMAIN UNCHANGED */}
-      {/* [CUT HERE IF NEEDED TO FOCUS ON LOGIC] */}
+      {/* HEADER AND CHAT UI RENDER GOES HERE */}
     </div>
   );
 }
