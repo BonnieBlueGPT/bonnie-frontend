@@ -1,5 +1,47 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 
+// Utility Functions
+const generateSessionId = () => {
+  return 'session_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+};
+
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Custom Hook for API calls
+const useApiCall = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const makeRequest = useCallback(async (url, options = {}) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return { makeRequest, isLoading, error };
+};
+
 // Enhanced Constants with Emotional Intelligence
 const CONSTANTS = {
   API_ENDPOINTS: {
@@ -289,6 +331,13 @@ export default function BonnieChat() {
     });
   }, []);
 
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (endRef.current) {
+      endRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+
   useEffect(() => {
     const initializeChat = async () => {
       console.log("🚀 Initializing God-Tier emotional chat system...");
@@ -487,17 +536,258 @@ export default function BonnieChat() {
     }
   }, [sessionId, makeRequest, online, simulateBonnieTyping, addMessage, userProfile]);
 
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend(input);
+    }
+  };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <header>
-        {/* Header content */}
+    <div style={{
+      height: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      fontFamily: 'Inter, system-ui, Avenir, Helvetica, Arial, sans-serif',
+      backgroundColor: CONSTANTS.COLORS.background,
+      backgroundImage: 'linear-gradient(135deg, #fff0f6 0%, #ffe6f0 100%)'
+    }}>
+      {/* Header */}
+      <header style={{
+        padding: '20px',
+        background: 'linear-gradient(135deg, #e91e63 0%, #ad1457 100%)',
+        color: 'white',
+        boxShadow: '0 4px 20px rgba(233, 30, 99, 0.3)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <div style={{
+            width: '50px',
+            height: '50px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #ffffff20, #ffffff40)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '24px'
+          }}>
+            💕
+          </div>
+          <div>
+            <h1 style={{ margin: 0, fontSize: '24px', fontWeight: '600' }}>Bonnie</h1>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '8px',
+              fontSize: '14px',
+              opacity: 0.9
+            }}>
+              <div style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                backgroundColor: online ? CONSTANTS.COLORS.online : CONSTANTS.COLORS.offline
+              }}></div>
+              {online ? (
+                typing ? 'Typing...' : 'Online'
+              ) : (
+                connectionStatus === 'connecting' ? 'Connecting...' : 'Offline'
+              )}
+            </div>
+          </div>
+        </div>
+        
+        <div style={{ 
+          fontSize: '14px', 
+          textAlign: 'right',
+          opacity: 0.9
+        }}>
+          <div>Bond Score: {userProfile.bondScore}</div>
+          <div style={{ fontSize: '12px' }}>
+            {currentPersonality} • {currentSentiment.primary}
+          </div>
+        </div>
       </header>
-      <main>
-        {/* Main chat content */}
+
+      {/* Messages Container */}
+      <main style={{
+        flex: 1,
+        overflow: 'auto',
+        padding: '20px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '15px'
+      }}>
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: message.sender === 'user' ? 'flex-end' : 'flex-start',
+              maxWidth: '80%',
+              alignSelf: message.sender === 'user' ? 'flex-end' : 'flex-start'
+            }}
+          >
+            <div
+              style={{
+                padding: '12px 18px',
+                borderRadius: '20px',
+                backgroundColor: message.sender === 'user' 
+                  ? CONSTANTS.COLORS.primary
+                  : 'white',
+                color: message.sender === 'user' ? 'white' : '#333',
+                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.1)',
+                border: message.sender === 'bonnie' ? `2px solid ${CONSTANTS.COLORS.border}` : 'none',
+                wordWrap: 'break-word',
+                fontSize: '16px',
+                lineHeight: '1.4'
+              }}
+            >
+              {message.text}
+            </div>
+            <div style={{
+              fontSize: '12px',
+              color: '#666',
+              marginTop: '4px',
+              display: 'flex',
+              gap: '8px',
+              alignItems: 'center'
+            }}>
+              <span>{new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              {message.personality && (
+                <span style={{ opacity: 0.7 }}>• {message.personality}</span>
+              )}
+            </div>
+          </div>
+        ))}
+        
+        {typing && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            maxWidth: '80%'
+          }}>
+            <div style={{
+              padding: '12px 18px',
+              borderRadius: '20px',
+              backgroundColor: 'white',
+              border: `2px solid ${CONSTANTS.COLORS.border}`,
+              boxShadow: '0 2px 12px rgba(0, 0, 0, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <div style={{
+                display: 'flex',
+                gap: '4px'
+              }}>
+                {[0, 1, 2].map(i => (
+                  <div
+                    key={i}
+                    style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      backgroundColor: CONSTANTS.COLORS.primary,
+                      animation: `pulse 1.4s ease-in-out infinite both`,
+                      animationDelay: `${i * 0.2}s`
+                    }}
+                  ></div>
+                ))}
+              </div>
+              <span style={{ color: '#666', fontSize: '14px' }}>Bonnie is typing...</span>
+            </div>
+          </div>
+        )}
+        
+        <div ref={endRef}></div>
       </main>
-      <footer>
-        {/* Input area */}
+
+      {/* Input Area */}
+      <footer style={{
+        padding: '20px',
+        backgroundColor: 'white',
+        borderTop: `1px solid ${CONSTANTS.COLORS.border}`,
+        boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.1)'
+      }}>
+        <div style={{
+          display: 'flex',
+          gap: '12px',
+          alignItems: 'flex-end'
+        }}>
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Type your message... 💭"
+            disabled={busy}
+            style={{
+              flex: 1,
+              padding: '12px 16px',
+              border: `2px solid ${CONSTANTS.COLORS.border}`,
+              borderRadius: '20px',
+              fontSize: '16px',
+              resize: 'none',
+              outline: 'none',
+              backgroundColor: '#fafafa',
+              transition: 'all 0.3s ease',
+              minHeight: '50px',
+              maxHeight: '120px',
+              fontFamily: 'inherit'
+            }}
+            rows={1}
+          />
+          <button
+            onClick={() => handleSend(input)}
+            disabled={busy || !input.trim()}
+            style={{
+              padding: '12px 20px',
+              backgroundColor: CONSTANTS.COLORS.primary,
+              color: 'white',
+              border: 'none',
+              borderRadius: '20px',
+              cursor: busy || !input.trim() ? 'not-allowed' : 'pointer',
+              fontSize: '16px',
+              fontWeight: '600',
+              transition: 'all 0.3s ease',
+              opacity: busy || !input.trim() ? 0.5 : 1,
+              minWidth: '80px',
+              height: '50px'
+            }}
+          >
+            {busy ? '...' : 'Send'}
+          </button>
+        </div>
+        
+        {error && (
+          <div style={{
+            marginTop: '10px',
+            padding: '8px 12px',
+            backgroundColor: '#fee',
+            color: '#c33',
+            borderRadius: '8px',
+            fontSize: '14px'
+          }}>
+            Error: {error}
+          </div>
+        )}
       </footer>
+      
+      <style jsx>{`
+        @keyframes pulse {
+          0%, 80%, 100% { 
+            transform: scale(0.8);
+            opacity: 0.5;
+          }
+          40% { 
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+      `}</style>
     </div>
   );
 }
