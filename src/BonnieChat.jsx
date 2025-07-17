@@ -1,102 +1,220 @@
-// BonnieChat.jsx — v15 GPT-Fusion EOM Reader Upgrade
+// 💬 BonnieChat.jsx — v18.1 Galatea Entry Hotfix
 import React, { useEffect, useRef, useState } from 'react';
-import './BonnieDashboard.css';
 
-const BonnieChat = () => {
+const CHAT_API_ENDPOINT = 'https://bonnie-backend-server.onrender.com/bonnie-chat';
+const ENTRY_API_ENDPOINT = 'https://bonnie-backend-server.onrender.com/bonnie-entry';
+
+const session_id = (() => {
+  let id = localStorage.getItem('bonnie_session');
+  if (!id) {
+    id = 'guest_' + Math.random().toString(36).slice(2);
+    localStorage.setItem('bonnie_session', id);
+    window.__BONNIE_FIRST_VISIT = true;
+  }
+  return id;
+})();
+
+export default function BonnieChat() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
-  const [isTyping, setTyping] = useState(false);
-  const [isBusy, setBusy] = useState(false);
-  const chatEndRef = useRef(null);
-
-  const scrollToBottom = () => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const [busy, setBusy] = useState(false);
+  const [typing, setTyping] = useState(false);
+  const [online, setOnline] = useState(false);
+  const [hasFiredIdleMessage, setHasFiredIdleMessage] = useState(false);
+  const endRef = useRef(null);
+  const idleTimerRef = useRef(null);
 
   useEffect(() => {
-    scrollToBottom();
+    const init = async () => {
+      if (window.__BONNIE_FIRST_VISIT) {
+        simulateBonnieTyping("Hold on… Bonnie’s just slipping into something more comfortable 😘");
+        return;
+      }
+
+      try {
+        const res = await fetch(ENTRY_API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id })
+        });
+        const { reply, delay } = await res.json();
+        setTimeout(() => simulateBonnieTyping(reply), delay || 1000);
+      } catch {
+        simulateBonnieTyping("Hey there 😘");
+      }
+    };
+
+    init();
+
+    setTimeout(() => {
+      setOnline(true);
+
+      // ✅ NEW LOGIC: Fallback if Bonnie hasn't spoken yet
+      if (!window.__BONNIE_FIRST_VISIT && messages.length === 0) {
+        fetch(ENTRY_API_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_id })
+        })
+        .then(res => res.json())
+        .then(({ reply }) => {
+          simulateBonnieTyping(reply);
+        })
+        .catch(() => {
+          simulateBonnieTyping("Hey there 😘");
+        });
+      }
+
+    }, 3000);
+  }, []);
+
+  useEffect(() => {
+    idleTimerRef.current = setTimeout(() => {
+      if (messages.length === 0 && !hasFiredIdleMessage) {
+        const idleLines = [
+          "Still deciding what to say? 😘",
+          "Don’t leave me hanging…",
+          "You can talk to me, you know 💋",
+          "Don’t make me beg for your attention 😉"
+        ];
+        const idleDelay = Math.random() * 3000 + 2000;
+        setTimeout(() => {
+          simulateBonnieTyping(idleLines[Math.floor(Math.random() * idleLines.length)]);
+          setHasFiredIdleMessage(true);
+        }, idleDelay);
+      }
+    }, 30000);
+    return () => clearTimeout(idleTimerRef.current);
   }, [messages]);
 
-  const addMessage = (text, sender = 'user') => {
-    setMessages((prev) => [...prev, { text, sender }]);
-  };
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, typing]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!input.trim() || isBusy) return;
-    const userMessage = input.trim();
-    addMessage(userMessage, 'user');
+  async function addMessage(text, sender) {
+    setMessages(m => [...m, { sender, text }]);
+  }
+
+  async function send(text) {
+    if (!text || busy) return;
     setInput('');
     setBusy(true);
-    simulateBonnieTyping('...', 'typing');
-
+    await addMessage(text, 'user');
     try {
-      const session_id = localStorage.getItem('bonnie_user') || `guest_${Math.random().toString(36).substring(2)}`;
-      localStorage.setItem('bonnie_user', session_id);
-
-      const res = await fetch('https://bonnie-backend-server.onrender.com/bonnie-chat', {
+      const res = await fetch(CHAT_API_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id, message: userMessage })
+        body: JSON.stringify({ session_id, message: text })
       });
-      const data = await res.json();
-      const reply = data.reply || '...';
+      const { reply } = await res.json();
+      simulateBonnieTyping(reply);
+    } catch {
+      simulateBonnieTyping("Oops… Bonnie had a moment 💔");
+    }
+  }
 
-      if (reply.includes('<EOM>')) {
-        const parts = reply.split('<EOM>').map(p => p.trim()).filter(Boolean);
-        for (let i = 0; i < parts.length; i++) {
-          setTyping(true);
-          await new Promise(r => setTimeout(r, 600 + Math.random() * 600));
-          setTyping(false);
-          await addMessage(parts[i], 'bonnie');
-          await new Promise(r => setTimeout(r, 1000 + Math.random() * 1200));
-        }
+  function simulateBonnieTyping(raw) {
+    if (!online) return;
+
+    const parts = raw.split(/<EOM(?:::(.*?))?>/).map((chunk, index) => {
+      if (index % 2 === 0) {
+        return { text: chunk.trim(), pause: 1200, speed: 'normal' };
+      } else {
+        const pause = /pause=(\\d+)/.exec(chunk)?.[1];
+        const speed = /speed=(\\w+)/.exec(chunk)?.[1];
+        return { meta: true, pause: pause ? parseInt(pause) : 1000, speed: speed || 'normal' };
+      }
+    });
+
+    const finalParts = [];
+    for (let i = 0; i < parts.length; i++) {
+      if (!parts[i].meta) {
+        const pause = parts[i + 1]?.pause ?? 1000;
+        const speed = parts[i + 1]?.speed ?? 'normal';
+        finalParts.push({ ...parts[i], pause, speed });
+      }
+    }
+
+    (async function play(index = 0) {
+      if (index >= finalParts.length) {
         setBusy(false);
         return;
       }
 
-      const duration = Math.min(10000, Math.max(2000, (reply.length / (5 + Math.random() * 3)) * 1000));
-      setTimeout(() => {
-        setTyping(false);
-        addMessage(reply, 'bonnie');
-        setBusy(false);
-      }, duration);
-    } catch (err) {
+      const part = finalParts[index];
+      await new Promise(res => setTimeout(res, part.pause));
+      setTyping(true);
+      const speedMap = { slow: 100, normal: 64, fast: 40 };
+      const typingTime = part.text.length * (speedMap[part.speed] || 64);
+      await new Promise(res => setTimeout(res, typingTime));
       setTyping(false);
-      addMessage('Oops… something broke 😢 Try again?', 'bonnie');
-      setBusy(false);
-    }
-  };
-
-  const simulateBonnieTyping = (text, sender) => {
-    setTyping(true);
-    setTimeout(() => {
-      setTyping(false);
-      if (text !== '...') addMessage(text, sender);
-    }, 1500);
-  };
+      await addMessage(part.text, 'bonnie');
+      setTimeout(() => play(index + 1), 400);
+    })();
+  }
 
   return (
-    <div className="bonnie-chat-container">
-      <div className="bonnie-messages">
-        {messages.map((msg, i) => (
-          <div key={i} className={`bonnie-message ${msg.sender}`}>
-            {msg.text}
-          </div>
-        ))}
-        {isTyping && <div className="bonnie-message bonnie typing">Bonnie is typing...</div>}
-        <div ref={chatEndRef} />
+    <div style={{ fontFamily: 'Segoe UI', height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', padding: 8 }}>
+        <img src="https://static.wixstatic.com/media/6f5121_df2de6be1e444b0cb2df5d4bd9d49b21~mv2.png" style={{ width: 56, height: 56, borderRadius: 28, marginRight: 12, border: '2px solid #e91e63' }} alt="Bonnie" />
+        <div>
+          <div style={{ color: '#e91e63', fontSize: 20, fontWeight: 600 }}>Bonnie Blue</div>
+          <div style={{ color: '#555', fontSize: 14 }}>Flirty. Fun. Dangerously charming.</div>
+          <a href="https://x.com/trainmybonnie" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#e91e63', textDecoration: 'none' }}>💋 Follow me on X</a>
+        </div>
+        <div style={{ marginLeft: 'auto', fontWeight: 500, color: online ? '#28a745' : '#aaa', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          {online ? (<><span style={{ animation: 'pulseHeart 1.2s infinite' }}>💚</span><span>Online</span></>) : '💤 Offline'}
+        </div>
       </div>
-      <form onSubmit={handleSubmit} className="bonnie-input">
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column' }}>
+        {messages.map((m, i) => (
+          <div key={i} style={{
+            maxWidth: '75%', padding: 8, borderRadius: 12, margin: '6px 0', fontSize: 14, lineHeight: 1.4,
+            ...(m.sender === 'user'
+              ? { background: 'linear-gradient(135deg,#ff83a0,#e91e63)', color: '#fff', alignSelf: 'flex-end', marginLeft: 'auto' }
+              : { background: '#fff0f6', border: '1px solid #ffe6f0', color: '#333', alignSelf: 'flex-start' })
+          }}>{m.text}</div>
+        ))}
+        {typing && online && (
+          <div style={{ display: 'flex', gap: 4, margin: '8px 0' }}>
+            <div style={{ width: 8, height: 8, borderRadius: 4, background: '#e91e63', animation: 'bounce 1s infinite ease-in-out', animationDelay: '0s' }} />
+            <div style={{ width: 8, height: 8, borderRadius: 4, background: '#e91e63', animation: 'bounce 1s infinite ease-in-out', animationDelay: '0.2s' }} />
+            <div style={{ width: 8, height: 8, borderRadius: 4, background: '#e91e63', animation: 'bounce 1s infinite ease-in-out', animationDelay: '0.4s' }} />
+          </div>
+        )}
+        <div ref={endRef} />
+      </div>
+
+      <div style={{ flexShrink: 0, display: 'flex', gap: 8, padding: 8, borderTop: '1px solid #eee' }}>
         <input
+          style={{ flex: 1, padding: 12, borderRadius: 30, border: '1px solid #ccc', fontSize: 16 }}
           value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Type something..."
+          placeholder="Type something…"
+          disabled={busy}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && send(input)}
         />
-        <button type="submit" disabled={isBusy}>Send</button>
-      </form>
+        <button
+          style={{ padding: '0 16px', borderRadius: 30, background: '#e91e63', color: '#fff', border: 'none', fontSize: 16, cursor: 'pointer' }}
+          disabled={busy || !input.trim()}
+          onClick={() => send(input)}>
+          Send
+        </button>
+      </div>
     </div>
   );
-};
+}
 
-export default BonnieChat;
+const style = document.createElement('style');
+style.textContent = `
+@keyframes bounce {
+  0%,100% { transform: translateY(0); opacity:0.4; }
+  50%      { transform: translateY(-6px); opacity:1; }
+}
+@keyframes pulseHeart {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}`;
+document.head.append(style);
