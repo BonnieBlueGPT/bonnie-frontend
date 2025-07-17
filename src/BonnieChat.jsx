@@ -1,4 +1,4 @@
-// 💬 BonnieChat.jsx — v20.2 Final Galatea Entry Patch
+// 💬 BonnieChat.jsx — v20.2 Final Visual Fix + Entry Intro Active
 import React, { useEffect, useRef, useState } from 'react';
 
 const CHAT_API_ENDPOINT = 'https://bonnie-backend-server.onrender.com/bonnie-chat';
@@ -136,8 +136,60 @@ export default function BonnieChat() {
   }
 
   return (
-    <div style={{ fontFamily: 'Segoe UI', height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* HEADER AND CHAT UI RENDER GOES HERE */}
+    <div style={{ fontFamily: 'Segoe UI', height: '100dvh', display: 'flex', flexDirection: 'column', background: '#0d0d0d', color: 'white' }}>
+      <div style={{ padding: '1rem', borderBottom: '1px solid #333', background: '#111' }}>
+        <h2 style={{ margin: 0, fontSize: '1.25rem' }}>Bonnie 💋</h2>
+        <small>{online ? 'Online' : 'Connecting...'}</small>
+      </div>
+      <div style={{ flex: 1, padding: '1rem', overflowY: 'auto' }}>
+        {messages.map((msg, idx) => (
+          <div key={idx} style={{
+            display: 'flex',
+            justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start',
+            marginBottom: '1rem'
+          }}>
+            <div style={{
+              background: msg.sender === 'user' ? '#007bff' : '#333',
+              color: 'white',
+              padding: '0.75rem 1rem',
+              borderRadius: '20px',
+              maxWidth: '70%',
+              fontSize: '0.95rem',
+              whiteSpace: 'pre-wrap'
+            }}>
+              {msg.text}
+            </div>
+          </div>
+        ))}
+        {typing && (
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
+            <div style={{
+              background: '#333', padding: '0.75rem 1rem', borderRadius: '20px',
+              display: 'flex', gap: '4px'
+            }}>
+              <div style={{ animation: 'bounce 1s infinite' }}>●</div>
+              <div style={{ animation: 'bounce 1s infinite 0.2s' }}>●</div>
+              <div style={{ animation: 'bounce 1s infinite 0.4s' }}>●</div>
+            </div>
+          </div>
+        )}
+        <div ref={endRef}></div>
+      </div>
+      <form onSubmit={e => { e.preventDefault(); send(input); }} style={{ padding: '1rem', borderTop: '1px solid #333', background: '#111' }}>
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          placeholder="Say something to Bonnie…"
+          style={{
+            width: '100%',
+            padding: '0.75rem 1rem',
+            borderRadius: '30px',
+            border: 'none',
+            outline: 'none',
+            fontSize: '1rem'
+          }}
+        />
+      </form>
     </div>
   );
 }
@@ -147,10 +199,5 @@ style.textContent = `
 @keyframes bounce {
   0%,100% { transform: translateY(0); opacity:0.4; }
   50%      { transform: translateY(-6px); opacity:1; }
-}
-@keyframes pulseHeart {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.15); opacity: 0.8; }
-  100% { transform: scale(1); opacity: 1; }
 }`;
 document.head.append(style);
