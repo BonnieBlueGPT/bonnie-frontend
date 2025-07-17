@@ -1,4 +1,4 @@
-// 💬 BonnieChat.jsx — v21.0 Restored UI + Smart Entry + EOM Delay Engine
+// 💬 BonnieChat.jsx — v21.1 Always GPT Entry — No More Hardcoded First Visit
 import React, { useEffect, useRef, useState } from 'react';
 
 const CHAT_API_ENDPOINT = 'https://bonnie-backend-server.onrender.com/bonnie-chat';
@@ -9,7 +9,6 @@ const session_id = (() => {
   if (!id) {
     id = 'guest_' + Math.random().toString(36).slice(2);
     localStorage.setItem('bonnie_session', id);
-    window.__BONNIE_FIRST_VISIT = true;
   }
   return id;
 })();
@@ -25,21 +24,8 @@ export default function BonnieChat() {
   const endRef = useRef(null);
   const idleTimerRef = useRef(null);
 
-  const randomFlirtyOpeners = [
-    "Be honest… are you here to flirt with me? 😘",
-    "I bet you’re the type who likes a little trouble. Am I right? 💋",
-    "Mmm… what would you *do* to me if I were there right now?",
-    "Should I call you *daddy*, or do you want to earn it first? 😈",
-    "One question… how bad do you want me right now?"
-  ];
-
   useEffect(() => {
     const init = async () => {
-      if (window.__BONNIE_FIRST_VISIT) {
-        setTimeout(() => simulateBonnieTyping("Hold on… Bonnie’s just slipping into something more comfortable 😘"), 3000);
-        return;
-      }
-
       try {
         const res = await fetch(ENTRY_API_ENDPOINT, {
           method: 'POST',
