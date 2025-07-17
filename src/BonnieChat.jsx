@@ -195,7 +195,7 @@ const calculateEmotionalPause = (personality, sentiment, bondScore, messageLengt
 
 // Enhanced Message Parsing with Emotional Intelligence
 const parseMessageParts = (raw, personality, sentiment, bondScore) => {
-  console.log("🔍 Parsing with emotional context:", { personality, sentiment, bondScore });
+  godLog("🔍 Parsing with emotional context", { personality, sentiment, bondScore });
   
   const segments = raw.split(/<EOM(?:::(.*?))?>/).filter(Boolean);
   const finalParts = [];
@@ -237,6 +237,20 @@ const parseMessageParts = (raw, personality, sentiment, bondScore) => {
   return finalParts.filter(part => part.text && part.text.trim() !== '');
 };
 
+// --- GOD MODE DEBUGGING INJECTION START ---
+window.__BONNIE_GOD_MODE = true;
+function godLog(label, data) {
+  if (window && window.__BONNIE_GOD_MODE) {
+    console.groupCollapsed(`%c${label}`, 'color:#e91e63;font-weight:bold');
+    console.log(data);
+    console.trace();
+    console.groupEnd();
+  } else {
+    console.log(label, data);
+  }
+}
+// --- GOD MODE DEBUGGING INJECTION END ---
+
 // Main Component
 export default function BonnieChat() {
   const [messages, setMessages] = useState([]);
@@ -266,13 +280,13 @@ export default function BonnieChat() {
 
   const addMessage = useCallback((text, sender, personality = null, sentiment = null) => {
     if (!text || typeof text !== 'string' || text.trim() === '') {
-      console.warn("⚠️ Attempted to add empty/invalid message, skipping:", text);
+      godLog("⚠️ Attempted to add empty/invalid message, skipping", text);
       return;
     }
 
     const cleanText = text.trim();
     if (cleanText.length === 0) {
-      console.warn("⚠️ Message became empty after trimming, skipping");
+      godLog("⚠️ Message became empty after trimming, skipping", cleanText);
       return;
     }
 
@@ -285,7 +299,7 @@ export default function BonnieChat() {
       sentiment
     };
     
-    console.log("✅ Adding message with emotional context:", newMessage);
+    godLog("✅ Adding message with emotional context", newMessage);
     
     setMessages(prevMessages => {
       const newMessages = [...prevMessages, newMessage];
@@ -297,7 +311,7 @@ export default function BonnieChat() {
 
   useEffect(() => {
     const initializeChat = async () => {
-      console.log("🚀 Initializing God-Tier emotional chat system...");
+      godLog("🚀 Initializing God-Tier emotional chat system...", {});
       setConnectionStatus('connecting');
       
       try {
@@ -313,6 +327,14 @@ export default function BonnieChat() {
           })
         });
         
+        godLog("🔗 API Request (ENTRY)", {
+          session_id: sessionId,
+          request_type: 'god_tier_entry',
+          emotional_context: true,
+          user_agent: navigator.userAgent,
+          timestamp: Date.now()
+        });
+        godLog("🔗 API Response (ENTRY)", response);
         const { 
           reply, 
           delay = 1000, 
@@ -342,7 +364,7 @@ export default function BonnieChat() {
         }, delay);
         
       } catch (err) {
-        console.error('❌ Failed to initialize chat:', err);
+        godLog('❌ Failed to initialize chat', err);
         
         const fallbackPersonality = CONSTANTS.PERSONALITY_LAYERS.PLAYFUL;
         const fallbackSentiment = { primary: 'neutral', intensity: 0 };
@@ -363,7 +385,7 @@ export default function BonnieChat() {
   }, [sessionId, makeRequest]);
 
   const simulateBonnieTyping = useCallback((raw, personality, sentiment) => {
-    console.log("💬 God-Tier typing simulation:", { raw, personality, sentiment });
+    godLog("💬 God-Tier typing simulation", { raw, personality, sentiment });
     
     if (!online) return;
 
@@ -373,7 +395,7 @@ export default function BonnieChat() {
     }
 
     if (!raw || typeof raw !== 'string' || raw.trim() === '') {
-      console.warn("⚠️ Invalid message:", raw);
+      godLog("⚠️ Invalid message", raw);
       setBusy(false);
       return;
     }
@@ -383,17 +405,17 @@ export default function BonnieChat() {
     const validParts = parts.filter(part => part.text && part.text.trim() !== '');
     
     if (validParts.length === 0) {
-      console.warn("⚠️ No valid parts found");
+      godLog("⚠️ No valid parts found", validParts);
       setBusy(false);
       return;
     }
 
-    console.log(`🚀 Processing ${validParts.length} emotionally intelligent parts:`, validParts);
+    godLog(`🚀 Processing ${validParts.length} emotionally intelligent parts`, validParts);
 
     let currentIndex = 0;
     const processNextPart = async () => {
       if (currentIndex >= validParts.length) {
-        console.log("✅ Completed God-Tier typing simulation");
+        godLog("✅ Completed God-Tier typing simulation", {});
         setBusy(false);
         setTyping(false);
         typingProcessRef.current = null;
@@ -408,7 +430,7 @@ export default function BonnieChat() {
         return;
       }
 
-      console.log(`✅ Processing emotional part ${currentIndex + 1}/${validParts.length}:`, part);
+      godLog(`✅ Processing emotional part ${currentIndex + 1}/${validParts.length}`, part);
       
       await sleep(part.pause);
       
@@ -439,10 +461,10 @@ export default function BonnieChat() {
     setHasFiredIdleMessage(false);
     
     const userSentiment = analyzeSentiment(messageText);
-    console.log("🧠 User sentiment analysis:", userSentiment);
+    godLog("🧠 User sentiment analysis", userSentiment);
     
     const adaptedPersonality = selectPersonality(userProfile.bondScore, userSentiment, userProfile.conversationHistory);
-    console.log("🎭 Adapted personality:", adaptedPersonality);
+    godLog("🎭 Adapted personality", adaptedPersonality);
     
     setCurrentPersonality(adaptedPersonality);
     setCurrentSentiment(userSentiment);
@@ -459,19 +481,22 @@ export default function BonnieChat() {
     }
     
     try {
+      const apiRequestData = {
+        session_id: sessionId, 
+        message: messageText,
+        bond_score: userProfile.bondScore,
+        user_sentiment: userSentiment,
+        adapted_personality: adaptedPersonality,
+        conversation_history: userProfile.conversationHistory.slice(-5),
+        timestamp: Date.now()
+      };
+      godLog("🔗 API Request (CHAT)", apiRequestData);
       const response = await makeRequest(CONSTANTS.API_ENDPOINTS.CHAT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          session_id: sessionId, 
-          message: messageText,
-          bond_score: userProfile.bondScore,
-          user_sentiment: userSentiment,
-          adapted_personality: adaptedPersonality,
-          conversation_history: userProfile.conversationHistory.slice(-5),
-          timestamp: Date.now()
-        })
+        body: JSON.stringify(apiRequestData)
       });
+      godLog("🔗 API Response (CHAT)", response);
       
       if (response.bond_score !== undefined) {
         setUserProfile(prev => ({ 
@@ -479,6 +504,7 @@ export default function BonnieChat() {
           bondScore: response.bond_score,
           conversationHistory: [...prev.conversationHistory, { text: messageText, sentiment: userSentiment }].slice(-10)
         }));
+        godLog("🧠 Final Bond Level", response.bond_score);
       }
       
       const bonniePersonality = response.personality || adaptedPersonality;
@@ -487,7 +513,7 @@ export default function BonnieChat() {
       simulateBonnieTyping(response.reply, bonniePersonality, bonnieSentiment);
       
     } catch (err) {
-      console.error('Failed to send message:', err);
+      godLog('❌ Failed to send message', err);
       setBusy(false);
       simulateBonnieTyping("Oops… I'm having some technical difficulties, but I'm still here! 💔", adaptedPersonality, userSentiment);
     }
