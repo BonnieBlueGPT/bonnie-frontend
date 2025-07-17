@@ -4,8 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "actual-build": "vite build",
+    "build": "chmod +x node_modules/.bin/* && vite build",
+    "actual-build": "chmod +x node_modules/.bin/* && vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0"
   },
