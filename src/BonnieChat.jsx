@@ -51,6 +51,11 @@ const CONSTANTS = {
   }
 };
 
+// Function to generate a unique session ID
+const generateSessionId = () => {
+  return 'session_' + Math.random().toString(36).slice(2);
+};
+
 // God-Tier Sentiment Analysis System
 const analyzeSentiment = (text) => {
   const lowerText = text.toLowerCase();
@@ -232,6 +237,7 @@ const parseMessageParts = (raw, personality, sentiment, bondScore) => {
   return finalParts.filter(part => part.text && part.text.trim() !== '');
 };
 
+// Main Component
 export default function BonnieChat() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
