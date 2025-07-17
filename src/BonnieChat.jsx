@@ -1,6 +1,6 @@
-diff --git a/BonnieChat_Fixed.jsx b/BonnieChat_Fixed.jsx
---- a/BonnieChat_Fixed.jsx
-+++ b/BonnieChat_Fixed.jsx
+diff --git a/src/BonnieChat_Fixed.jsx b/src/BonnieChat_Fixed.jsx
+--- a/src/BonnieChat_Fixed.jsx
++++ b/src/BonnieChat_Fixed.jsx
 @@ -0,0 +1,932 @@
 +import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 +
