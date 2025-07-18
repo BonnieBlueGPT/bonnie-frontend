@@ -11,20 +11,35 @@ const CONSTANTS = {
     slow: 120, 
     normal: 64, 
     fast: 35,
-    // Emotional speed modifiers
+    // Enhanced emotional speed modifiers based on psychological timing
     emotional: {
-      shy: 1.6,
-      vulnerable: 1.5,
-      sad: 1.4,
-      intimate: 1.2,
-      gentle: 1.1,
-      neutral: 1.0,
-      supportive: 0.9,
-      flirty: 0.8,
-      playful: 0.7,
-      teasing: 0.6,
-      passionate: 0.5,
-      dominant: 0.4
+      shy: 1.8,         // Slowest - hesitation and uncertainty
+      vulnerable: 1.7,  // Very slow - emotional processing
+      sad: 1.6,         // Slow - heavy emotional weight
+      intimate: 1.3,    // Thoughtful - careful word choice
+      gentle: 1.2,      // Slightly slow - caring consideration
+      neutral: 1.0,     // Default baseline
+      supportive: 0.9,  // Slightly faster - encouraging
+      flirty: 0.7,      // Faster - confident and playful
+      playful: 0.6,     // Fast - energetic and spontaneous
+      teasing: 0.5,     // Very fast - quick wit
+      passionate: 0.4,  // Fastest - intense emotion
+      dominant: 0.3     // Extremely fast - decisive and commanding
+    },
+    // Base pause durations for different emotional states (in milliseconds)
+    emotionalPauses: {
+      shy: 1800,        // Long pause for hesitation
+      vulnerable: 2200, // Longest pause for deep emotional processing
+      sad: 2000,        // Long pause for emotional weight
+      intimate: 1400,   // Moderate pause for closeness
+      gentle: 1100,     // Slightly longer for thoughtfulness
+      neutral: 1000,    // Default pause
+      supportive: 900,  // Shorter, encouraging pace
+      flirty: 600,      // Quick, playful pause
+      playful: 700,     // Short, energetic pause
+      teasing: 500,     // Very short, witty pause
+      passionate: 400,  // Short, intense pause
+      dominant: 300     // Shortest, commanding pause
     }
   },
   IDLE_TIMEOUT: 30000,
@@ -491,6 +506,18 @@ styleSheet.textContent = `
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
   }
+  @keyframes slideInSlow {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slideInFast {
+    from { opacity: 0; transform: translateY(5px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes slideInIntimate {
+    from { opacity: 0; transform: translateY(15px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
   @keyframes bounce {
     0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
     30% { transform: translateY(-10px); opacity: 1; }
@@ -503,11 +530,25 @@ styleSheet.textContent = `
     0%, 100% { opacity: 0.6; transform: scale(0.98); }
     50% { opacity: 1; transform: scale(1.02); }
   }
+  @keyframes breatheSlow {
+    0%, 100% { opacity: 0.5; transform: scale(0.96); }
+    50% { opacity: 1; transform: scale(1.04); }
+  }
   @keyframes heartbeat {
     0%, 100% { transform: scale(1); }
     25% { transform: scale(1.05); }
     50% { transform: scale(1); }
     75% { transform: scale(1.02); }
+  }
+  @keyframes heartbeatIntense {
+    0%, 100% { transform: scale(1); }
+    25% { transform: scale(1.08); }
+    50% { transform: scale(1.02); }
+    75% { transform: scale(1.05); }
+  }
+  @keyframes shimmer {
+    0%, 100% { opacity: 0.7; transform: scale(1) rotate(0deg); }
+    50% { opacity: 1; transform: scale(1.02) rotate(1deg); }
   }
   .typing-dot:nth-child(1) { animation-delay: 0s; }
   .typing-dot:nth-child(2) { animation-delay: 0.2s; }
@@ -718,34 +759,46 @@ export default function BonnieChat() {
     let totalDelay = 0;
     let currentEmotion = 'neutral';
     
-    // Enhanced emotional multipliers based on psychological timing
-    const emotionalMultipliers = {
-      'shy': 1.8,          // Hesitation, processing time
-      'vulnerable': 2.1,   // Deep emotional processing
-      'sad': 2.0,          // Heavy emotional weight
-      'intimate': 1.6,     // Closeness, careful consideration
-      'passionate': 1.3,   // Intensity, but quick decision
-      'gentle': 1.4,       // Thoughtful, caring response
-      'teasing': 0.7,      // Quick wit, playful
-      'flirty': 0.9,       // Confident, but with flair
-      'playful': 0.8,      // Light-hearted, energetic
-      'dominant': 0.6,     // Decisive, commanding
-      'submissive': 1.4,   // Consideration, deference
-      'neutral': 1.0
+    // Enhanced emotional multipliers with intensity-based adjustments
+    const getEmotionalPauseMultiplier = (emotion, intensity) => {
+      const baseMultipliers = {
+        'shy': 2.0,          // Hesitation increases with intensity
+        'vulnerable': 2.3,   // Deep emotional processing
+        'sad': 2.1,          // Heavy emotional weight
+        'intimate': 1.7,     // Closeness, careful consideration
+        'passionate': 1.1,   // Quick but intense
+        'gentle': 1.5,       // Thoughtful, caring response
+        'teasing': 0.6,      // Quick wit, playful
+        'flirty': 0.8,       // Confident, but with flair
+        'playful': 0.7,      // Light-hearted, energetic
+        'dominant': 0.5,     // Decisive, commanding
+        'submissive': 1.6,   // Consideration, deference
+        'neutral': 1.0
+      };
+      
+      const baseMultiplier = baseMultipliers[emotion] || 1.0;
+      
+      // Intensity affects pause duration - higher intensity = longer pauses for processing
+      const intensityMultiplier = 1 + ((intensity - 1) * 0.3); // Scale 1.0 to 1.9
+      
+      return baseMultiplier * intensityMultiplier;
     };
     
     // Process each part with sophisticated emotional intelligence
     parts.forEach((part, index) => {
       if (part.isEOM) {
-        // This is an EOM pause instruction
-        const baseMultiplier = emotionalMultipliers[part.emotion] || 1.0;
+        // This is an EOM pause instruction with sophisticated emotional timing
+        const baseMultiplier = getEmotionalPauseMultiplier(part.emotion, sentiment.intensity);
         
-        // Factor in user's emotional state and stability
-        const driftInfluence = 1 + (emotionalState.drift * 0.3); // More drift = longer pauses
-        const intensityInfluence = 1 + (sentiment.intensity * 0.2); // Higher intensity = longer pauses
+        // Factor in user's emotional state and relationship stability
+        const driftInfluence = 1 + (emotionalState.drift * 0.4); // More drift = longer pauses
+        const stabilityInfluence = emotionalState.stabilityScore; // More stable = slightly faster
         
-        const finalMultiplier = baseMultiplier * driftInfluence * intensityInfluence;
-        const emotionalPause = Math.floor(part.pause * finalMultiplier);
+        // Use emotional pause defaults if pause not specified
+        const basePause = part.pause || CONSTANTS.TYPING_SPEEDS.emotionalPauses[part.emotion] || 1000;
+        
+        const finalMultiplier = baseMultiplier * driftInfluence * stabilityInfluence;
+        const emotionalPause = Math.floor(basePause * finalMultiplier);
         
         currentEmotion = part.emotion;
         
