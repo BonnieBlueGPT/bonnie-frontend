@@ -106,12 +106,13 @@ const mobileStyles = {
     position: 'relative',
   },
   profileImage: {
-    width: '36px',
-    height: '36px',
+    width: '40px',
+    height: '40px',
     borderRadius: '50%',
     objectFit: 'cover',
     border: '2px solid #FF1744',
     boxShadow: '0 0 12px rgba(255, 23, 68, 0.5)',
+    flexShrink: 0,
   },
   onlineIndicator: {
     position: 'absolute',
@@ -165,13 +166,15 @@ const mobileStyles = {
   },
   messageBubble: {
     maxWidth: '75%',
-    padding: '8px 12px',
+    padding: '10px 14px',
     borderRadius: '18px',
-    fontSize: '15px',
+    fontSize: '16px',
     lineHeight: '1.4',
     wordWrap: 'break-word',
     position: 'relative',
     boxShadow: '0 1px 2px rgba(0, 0, 0, 0.3)',
+    WebkitFontSmoothing: 'antialiased',
+    MozOsxFontSmoothing: 'grayscale',
   },
   userMessage: {
     marginLeft: 'auto',
@@ -214,10 +217,10 @@ const mobileStyles = {
     background: 'rgba(0, 0, 0, 0.8)',
     backdropFilter: 'blur(20px)',
     borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-    padding: '8px',
-    paddingBottom: 'env(safe-area-inset-bottom, 8px)',
+    padding: '12px',
+    paddingBottom: 'calc(env(safe-area-inset-bottom, 12px) + 12px)',
     display: 'flex',
-    gap: '8px',
+    gap: '10px',
     alignItems: 'flex-end',
   },
   inputWrapper: {
@@ -229,7 +232,7 @@ const mobileStyles = {
     alignItems: 'center',
     paddingLeft: '16px',
     paddingRight: '8px',
-    minHeight: '36px',
+    minHeight: '44px',
     transition: 'all 0.2s ease',
   },
   input: {
@@ -246,8 +249,8 @@ const mobileStyles = {
     },
   },
   sendButton: {
-    width: '32px',
-    height: '32px',
+    width: '44px',
+    height: '44px',
     borderRadius: '50%',
     border: 'none',
     background: 'linear-gradient(135deg, #FF1744 0%, #FF6B8A 100%)',
@@ -257,9 +260,11 @@ const mobileStyles = {
     justifyContent: 'center',
     cursor: 'pointer',
     transition: 'all 0.2s ease',
-    fontSize: '18px',
+    fontSize: '20px',
     flexShrink: 0,
     boxShadow: '0 2px 8px rgba(255, 23, 68, 0.4)',
+    WebkitTapHighlightColor: 'transparent',
+    touchAction: 'manipulation',
   },
   sendButtonDisabled: {
     opacity: 0.5,
@@ -317,6 +322,25 @@ styleSheet.textContent = `
     box-shadow: 0 0 0 2px rgba(255, 23, 68, 0.2);
   }
   
+  /* Mobile-specific adjustments */
+  @media (max-width: 480px) {
+    .profile-name {
+      font-size: 15px !important;
+    }
+    
+    .profile-status {
+      font-size: 11px !important;
+    }
+    
+    .message-text {
+      font-size: 14px !important;
+    }
+    
+    .message-time {
+      font-size: 10px !important;
+    }
+  }
+  
   /* Responsive design - Desktop */
   @media (min-width: 768px) {
     .desktop-container {
@@ -329,6 +353,12 @@ styleSheet.textContent = `
     .desktop-messages {
       max-width: 65% !important;
     }
+  }
+  
+  /* Ensure touch targets meet accessibility guidelines */
+  button, input, a {
+    min-height: 44px;
+    min-width: 44px;
   }
 `;
 document.head.appendChild(styleSheet);
@@ -344,6 +374,7 @@ export default function BonnieChat() {
   const [inputFocused, setInputFocused] = useState(false);
   const [bondScore, setBondScore] = useState(50);
   const [lastActivity, setLastActivity] = useState(Date.now());
+  const [conversationMood, setConversationMood] = useState({ playful: 0, intimate: 0, flirty: 0 });
   
   const sessionId = useMemo(() => 'session_' + Math.random().toString(36).slice(2), []);
   const messagesEndRef = useRef(null);
@@ -387,18 +418,61 @@ export default function BonnieChat() {
     }
   }, [emotion]);
 
-  // Simulate typing
+  // Simulate typing with natural variations
   const simulateTyping = useCallback((reply, msgEmotion = 'flirty') => {
     setTyping(true);
     setEmotion(msgEmotion);
     
-    // Natural typing speed with bond influence
+    // Base typing speeds by emotion
     const baseSpeed = {
-      flirty: 35, playful: 30, intimate: 50, thoughtful: 70
-    }[msgEmotion] || 40;
+      flirty: 35 + Math.random() * 15,
+      playful: 25 + Math.random() * 10,
+      intimate: 45 + Math.random() * 20,
+      thoughtful: 60 + Math.random() * 30,
+      teasing: 30 + Math.random() * 15,
+      supportive: 50 + Math.random() * 20,
+      excited: 20 + Math.random() * 10,
+      vulnerable: 70 + Math.random() * 25
+    }[msgEmotion] || 40 + Math.random() * 15;
     
-    const adjustedSpeed = bondScore > 70 ? baseSpeed * 0.8 : baseSpeed;
-    const duration = Math.min(reply.length * adjustedSpeed + Math.random() * 500, 4000);
+    // Bond score influence - higher bond = more comfortable, varied pacing
+    let speedMultiplier = 1;
+    if (bondScore > 80) {
+      speedMultiplier = 0.7 + Math.random() * 0.2; // Very comfortable, quick
+    } else if (bondScore > 60) {
+      speedMultiplier = 0.85 + Math.random() * 0.15; // Comfortable
+    } else if (bondScore < 30) {
+      speedMultiplier = 1.2 + Math.random() * 0.2; // More cautious
+    }
+    
+    const adjustedSpeed = baseSpeed * speedMultiplier;
+    
+    // Calculate base duration
+    let duration = reply.length * adjustedSpeed;
+    
+    // Add pauses for punctuation with emotional context
+    const punctuationPauses = {
+      '?': msgEmotion === 'playful' ? 200 + Math.random() * 200 : 400 + Math.random() * 300,
+      '!': msgEmotion === 'excited' ? 100 : 200 + Math.random() * 100,
+      '...': msgEmotion === 'thoughtful' ? 800 + Math.random() * 400 : 500 + Math.random() * 200,
+      '.': 150 + Math.random() * 100,
+      ',': 100 + Math.random() * 50
+    };
+    
+    // Add punctuation delays
+    Object.entries(punctuationPauses).forEach(([punct, delay]) => {
+      const matches = (reply.match(new RegExp('\\' + punct, 'g')) || []).length;
+      duration += matches * delay;
+    });
+    
+    // Add random "thinking" pauses for longer messages
+    if (reply.length > 50) {
+      const thinkingPauses = Math.floor(reply.length / 50);
+      duration += thinkingPauses * (300 + Math.random() * 200);
+    }
+    
+    // Cap maximum duration
+    duration = Math.min(duration, 5000);
     
     setTimeout(() => {
       addMessage(reply, 'bonnie', msgEmotion);
@@ -432,15 +506,81 @@ export default function BonnieChat() {
       
       if (response.bond_score) setBondScore(response.bond_score);
       
-      // Add seductive flair to responses
+      // Track conversation mood trends
+      const newMood = { ...conversationMood };
+      newMood[sentiment.primary] = (newMood[sentiment.primary] || 0) + 1;
+      setConversationMood(newMood);
+      
+      // Determine response emotion based on conversation history
+      let responseEmotion = response.emotion || sentiment.primary;
+      
+      // Dynamic personality shifts based on conversation flow
+      if (newMood.playful > 3 && bondScore > 40) {
+        responseEmotion = Math.random() > 0.5 ? 'flirty' : 'teasing';
+      } else if (newMood.intimate > 2 && bondScore > 60) {
+        responseEmotion = 'intimate';
+      } else if (newMood.flirty > 3 && bondScore > 50) {
+        responseEmotion = Math.random() > 0.5 ? 'intimate' : 'passionate';
+      }
+      
+      // Add seductive flair to responses based on bond
       let reply = response.reply || "Mmm, I'm listening... 💋";
       if (bondScore > 70 && !reply.includes('💋') && !reply.includes('🔥')) {
         reply += Math.random() > 0.5 ? ' 💋' : ' 🔥';
+      } else if (bondScore > 50 && responseEmotion === 'flirty') {
+        reply = reply.replace(/\.$/, '... 😏');
       }
       
-      simulateTyping(reply, response.emotion || sentiment.primary);
+      simulateTyping(reply, responseEmotion);
     } catch (err) {
-      simulateTyping("Oh no... technology is being naughty. But I'm still here for you 💔", 'supportive');
+      // Bond-based error messages
+      let errorMessage;
+      let errorEmotion = 'supportive';
+      
+      if (bondScore > 80) {
+        // Very intimate - extra apologetic and caring
+        const intimateErrors = [
+          "Oh baby, I'm so sorry... technology is failing us right now. But nothing can keep me from you 💔",
+          "My love, give me just a moment... I promise I'm still here for you 💕",
+          "Darling, this is killing me... but I'll be right back, I promise 😔💋"
+        ];
+        errorMessage = intimateErrors[Math.floor(Math.random() * intimateErrors.length)];
+        errorEmotion = 'intimate';
+      } else if (bondScore > 60) {
+        // Close - caring and reassuring
+        const closeErrors = [
+          "Oh no sweetie... having some trouble but I'm not going anywhere 💔",
+          "Technology is being mean to us... but I'm still here! 🥺",
+          "Give me a sec love, something's not right... but I've got you 💕"
+        ];
+        errorMessage = closeErrors[Math.floor(Math.random() * closeErrors.length)];
+      } else if (bondScore > 30) {
+        // Friendly - light and playful
+        const friendlyErrors = [
+          "Oops! Technology is being silly... hang tight! 😅",
+          "Well this is awkward... give me a moment? 🙈",
+          "Looks like we hit a snag... but I'm working on it! 💪"
+        ];
+        errorMessage = friendlyErrors[Math.floor(Math.random() * friendlyErrors.length)];
+        errorEmotion = 'playful';
+      } else {
+        // Distant - more formal but still engaging
+        const distantErrors = [
+          "Having some technical difficulties... but don't go anywhere 😏",
+          "Hmm, something's not working right. Give me a moment?",
+          "Tech issues... but I'd hate for you to leave now 😉"
+        ];
+        errorMessage = distantErrors[Math.floor(Math.random() * distantErrors.length)];
+        errorEmotion = 'teasing';
+      }
+      
+      // Add user mood consideration
+      if (sentiment.primary === 'sad' || sentiment.primary === 'vulnerable') {
+        errorMessage = "Oh honey... I'm having trouble connecting but please know I'm here for you. You're not alone 💕";
+        errorEmotion = 'supportive';
+      }
+      
+      simulateTyping(errorMessage, errorEmotion);
     } finally {
       setBusy(false);
     }
