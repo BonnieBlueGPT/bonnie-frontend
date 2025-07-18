@@ -1,13 +1,24 @@
 {
-  "name": "bonnie-frontend",
-  "version": "1.0.0",
+  "name": "bonnie-god-mode",
+  "version": "2.0.0",
   "type": "module",
+  "description": "Bonnie's God Mode - The Ultimate Seductive AI Companion Experience",
+  "keywords": ["ai", "companion", "chat", "mobile-first", "seductive", "bonnie"],
+  "author": "TrainMyGirl",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/trainmygirl/bonnie-frontend"
+  },
   "scripts": {
-    "dev": "vite",
-    "build": "chmod +x node_modules/.bin/* && vite build",
-    "actual-build": "chmod +x node_modules/.bin/* && vite build",
-    "preview": "vite preview",
-    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0"
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint . --ext js,jsx --fix",
+    "deploy": "npm run build && npm run preview",
+    "clean": "rm -rf dist node_modules/.vite",
+    "start": "npm run dev"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -25,6 +36,13 @@
     "vite": "^7.0.5"
   },
   "engines": {
-    "node": ">=18.0.0"
-  }
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead",
+    "not ie 11"
+  ]
 }
