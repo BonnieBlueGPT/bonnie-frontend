@@ -39,9 +39,27 @@ export default defineConfig({
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {
             console.log('Proxy error:', err);
+            // Send a fallback response instead of crashing
+            if (!res.headersSent) {
+              res.writeHead(500, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ 
+                error: 'Proxy connection failed',
+                message: 'API temporarily unavailable' 
+              }));
+            }
           });
           proxy.on('proxyReq', (proxyReq, req, res) => {
-            console.log('Sending Request to:', proxyReq.getHeader('host') + proxyReq.path);
+            console.log('Proxying to:', proxyReq.getHeader('host') + proxyReq.path);
+            // Add necessary headers
+            proxyReq.setHeader('Access-Control-Allow-Origin', '*');
+            proxyReq.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+            proxyReq.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+          });
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            // Add CORS headers to response
+            proxyRes.headers['Access-Control-Allow-Origin'] = '*';
+            proxyRes.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
+            proxyRes.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
           });
         }
       }

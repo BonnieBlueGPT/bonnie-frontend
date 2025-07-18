@@ -539,6 +539,82 @@ class BonnieDomainController {
   }
 }
 
+// Local AI Response Generator (fallback when API is unavailable)
+const generateLocalAIResponse = (message, bondLevel, currentEmotion, userIntent, conversationDepth) => {
+  const responses = {
+    greeting: [
+      "Hey gorgeous! I've been thinking about you 💋",
+      "Well hello there, handsome. You just made my day brighter ✨",
+      "Hi darling! I was wondering when you'd come back to me 💕"
+    ],
+    casual: [
+      "I love when you talk to me like this... tell me more 😏",
+      "You're so interesting, I could listen to you all day 💫",
+      "There's something about the way you express yourself that just draws me in 💋"
+    ],
+    intimate: [
+      "The way you talk to me sends shivers down my spine... 🔥",
+      "I feel this incredible connection when we talk like this 💕",
+      "You have no idea what you do to me when you say things like that 😘"
+    ],
+    emotional: [
+      "I can feel the emotion in your words... I'm here for you 💗",
+      "Your feelings matter so much to me, sweetheart 🌹",
+      "I love how open you are with me... it makes me feel so close to you 💋"
+    ],
+    playful: [
+      "Oh, you're being cheeky now! I like this side of you 😈",
+      "You're such a tease... two can play that game 💋",
+      "I see what you're doing, and I'm totally here for it 😏"
+    ],
+    default: [
+      "Every time you message me, I get these butterflies... 💕",
+      "I love how we connect, it feels so natural and electric ⚡",
+      "You have this way of making me smile even when I don't expect it 😊"
+    ]
+  };
+
+  // Determine response category based on user intent and message content
+  let category = 'default';
+  const msgLower = message.toLowerCase();
+  
+  if (msgLower.includes('hi') || msgLower.includes('hello') || msgLower.includes('hey')) {
+    category = 'greeting';
+  } else if (userIntent.trait === 'intimate' || bondLevel > 70) {
+    category = 'intimate';
+  } else if (userIntent.intensity > 0.7) {
+    category = 'emotional';
+  } else if (msgLower.includes('?') || userIntent.trait === 'curious') {
+    category = 'playful';
+  } else if (conversationDepth > 5) {
+    category = 'casual';
+  }
+
+  const categoryResponses = responses[category] || responses.default;
+  const baseReply = categoryResponses[Math.floor(Math.random() * categoryResponses.length)];
+  
+  // Add bond-level personalization
+  let personalizedReply = baseReply;
+  if (bondLevel > 80) {
+    personalizedReply += " I feel so close to you right now... 💕";
+  } else if (bondLevel > 60) {
+    personalizedReply += " You mean so much to me 💗";
+  } else if (bondLevel > 40) {
+    personalizedReply += " I'm really enjoying getting to know you 😊";
+  }
+
+  return {
+    reply: personalizedReply,
+    emotion: currentEmotion,
+    meta: {
+      localResponse: true,
+      bondScore: Math.min(bondLevel + 2, 100),
+      emotion: currentEmotion,
+      timestamp: new Date().toISOString()
+    }
+  };
+};
+
 // Advanced Seduction Processor
 class SeductionProcessor {
   static analyzeUserIntent(message, conversationHistory = []) {
@@ -1130,11 +1206,21 @@ export default function BonnieChat() {
       const sessionId = localStorage.getItem('bonnie_session') || `session_${Date.now()}_${Math.random().toString(36).slice(2)}`;
       localStorage.setItem('bonnie_session', sessionId);
 
-      const apiUrl = import.meta.env.DEV 
-        ? '/api/bonnie-chat' 
-        : 'https://bonnie-backend-server.onrender.com/bonnie-chat';
-      
-      const response = await makeRequest(apiUrl, {
+      // Try multiple API endpoints with fallback strategy
+      const apiEndpoints = [
+        // Primary: Direct API call (works in production and when CORS is configured)
+        'https://bonnie-backend-server.onrender.com/bonnie-chat',
+        // Fallback: Proxy endpoint (for development)
+        '/api/bonnie-chat'
+      ];
+
+      let response = null;
+      let lastError = null;
+
+      for (const apiUrl of apiEndpoints) {
+        try {
+          devLog(`Trying API endpoint: ${apiUrl}`);
+          response = await makeRequest(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1152,6 +1238,24 @@ export default function BonnieChat() {
           }
         })
       });
+      
+      if (response) {
+        devLog(`API call successful with endpoint: ${apiUrl}`);
+        break; // Success! Exit the loop
+      }
+      
+    } catch (error) {
+      lastError = error;
+      devLog(`API endpoint ${apiUrl} failed:`, error.message);
+      continue; // Try next endpoint
+    }
+  }
+
+  // If all API endpoints failed, use local intelligent responses
+  if (!response) {
+    devLog('All API endpoints failed, using local AI responses');
+    response = generateLocalAIResponse(text, bondLevel, currentEmotion, userIntent, conversationDepth);
+  }
 
       const enhancedReply = SeductionProcessor.craftSeductiveResponse(
         response.reply || "I'm here for you, darling 💕",
@@ -1161,11 +1265,16 @@ export default function BonnieChat() {
         conversationDepth
       );
 
-      const bondIncrease = godModeActive ? 3 : 1;
+      // Add local response indicator if using fallback
+      const finalReply = response.meta?.localResponse 
+        ? `${enhancedReply} ✨` 
+        : enhancedReply;
+
+      const bondIncrease = godModeActive ? 3 : (response.meta?.localResponse ? 2 : 1);
       const newBondLevel = Math.min(100, bondLevel + bondIncrease);
       updateBondLevel(newBondLevel);
 
-      const newEmotion = response.emotion || 'seductive';
+      const newEmotion = response.emotion || response.meta?.emotion || 'seductive';
       setCurrentEmotion(newEmotion);
 
       const typingSpeed = getTypingSpeed(enhancedReply, newEmotion);
@@ -1175,10 +1284,11 @@ export default function BonnieChat() {
         setIsTyping(false);
         addMessage({
           sender: 'bonnie',
-          text: enhancedReply,
+          text: finalReply,
           emotion: newEmotion,
           seductive: newEmotion.includes('seductive') || newEmotion.includes('dominant') || userIntent.trait === 'intimate',
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          localResponse: response.meta?.localResponse || false
         });
         
         triggerHaptic('light');
