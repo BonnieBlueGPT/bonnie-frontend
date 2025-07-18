@@ -20,7 +20,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
-          bonnie: ['./src/components/BonnieGodMode.jsx']
+          galatea: ['./src/BonnieChat.jsx']
         }
       }
     },
@@ -32,34 +32,35 @@ export default defineConfig({
     open: true,
     proxy: {
       '/api': {
-        target: 'https://bonnie-backend-server.onrender.com',
+        target: 'https://galatea-brain.trainmygirl.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
         secure: true,
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {
-            console.log('Proxy error:', err);
-            // Send a fallback response instead of crashing
+            console.log('Galatea proxy error:', err);
             if (!res.headersSent) {
               res.writeHead(500, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({ 
-                error: 'Proxy connection failed',
-                message: 'API temporarily unavailable' 
+                error: 'Galatea connection failed',
+                message: 'Brain engine temporarily unavailable',
+                fallback: true
               }));
             }
           });
           proxy.on('proxyReq', (proxyReq, req, res) => {
-            console.log('Proxying to:', proxyReq.getHeader('host') + proxyReq.path);
-            // Add necessary headers
+            console.log('Proxying to Galatea:', proxyReq.getHeader('host') + proxyReq.path);
+            proxyReq.setHeader('X-Galatea-API-Key', process.env.VITE_GALATEA_API_KEY || 'bonnie-dev-key');
+            proxyReq.setHeader('X-Galatea-Version', '2.0');
+            proxyReq.setHeader('X-Bonnie-Client', 'web-dev');
             proxyReq.setHeader('Access-Control-Allow-Origin', '*');
             proxyReq.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-            proxyReq.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+            proxyReq.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Galatea-API-Key');
           });
           proxy.on('proxyRes', (proxyRes, req, res) => {
-            // Add CORS headers to response
             proxyRes.headers['Access-Control-Allow-Origin'] = '*';
             proxyRes.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
-            proxyRes.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
+            proxyRes.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Galatea-API-Key';
           });
         }
       }
@@ -74,5 +75,9 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['react', 'react-dom']
+  },
+  define: {
+    __GALATEA_VERSION__: JSON.stringify('2.0'),
+    __BONNIE_BUILD_TIME__: JSON.stringify(new Date().toISOString())
   }
 });
