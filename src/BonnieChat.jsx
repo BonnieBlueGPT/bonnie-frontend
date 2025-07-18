@@ -4,6 +4,20 @@ import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 // BONNIE'S GOD MODE - SINGLE FILE IMPLEMENTATION
 // ============================================================================
 
+// Development logging utility (disabled in production)
+const devLog = (...args) => {
+  if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_BONNIE) {
+    console.log('🔥 Bonnie Debug:', ...args);
+  }
+};
+
+// Disable all console logging in production
+if (import.meta.env.PROD) {
+  console.log = () => {};
+  console.warn = () => {};
+  console.error = () => {};
+}
+
 // Enhanced API Hook with retry logic and seductive error handling
 const useApiCall = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -157,6 +171,9 @@ const useApiCall = () => {
       } catch (err) {
         lastError = err;
         
+        // Only log errors in development with debug flag
+        devLog('API Error:', err);
+        
         if (err.name === 'AbortError') {
           throw new Error('Request cancelled');
         }
@@ -277,7 +294,7 @@ const useChatState = () => {
         setCurrentEmotion(savedEmotion);
       }
     } catch (error) {
-      console.warn('Failed to load chat history:', error);
+      // Silent error handling for better UX
     }
   }, []);
 
@@ -287,7 +304,7 @@ const useChatState = () => {
         const messagesToSave = messages.slice(-MAX_MESSAGES);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(messagesToSave));
       } catch (error) {
-        console.warn('Failed to save chat history:', error);
+        // Silent error handling for better UX
         localStorage.removeItem(STORAGE_KEY);
       }
     }
@@ -442,6 +459,7 @@ class BonnieDomainController {
 
     const metaTags = [
       { name: 'theme-color', content: '#e91e63' },
+      { name: 'mobile-web-app-capable', content: 'yes' },
       { name: 'apple-mobile-web-app-capable', content: 'yes' },
       { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
       { name: 'apple-mobile-web-app-title', content: "Bonnie's Space" },
@@ -876,7 +894,9 @@ const createGodModeStyles = (theme) => `
     flex: 1;
     padding: 1rem 1.25rem;
     font-size: 1rem;
-    border: 2px solid transparent;
+    border-width: 2px;
+    border-style: solid;
+    border-color: transparent;
     border-radius: 25px;
     background: rgba(255, 255, 255, 0.9);
     outline: none;
@@ -1110,7 +1130,11 @@ export default function BonnieChat() {
       const sessionId = localStorage.getItem('bonnie_session') || `session_${Date.now()}_${Math.random().toString(36).slice(2)}`;
       localStorage.setItem('bonnie_session', sessionId);
 
-      const response = await makeRequest('https://bonnie-backend-server.onrender.com/bonnie-chat', {
+      const apiUrl = import.meta.env.DEV 
+        ? '/api/bonnie-chat' 
+        : 'https://bonnie-backend-server.onrender.com/bonnie-chat';
+      
+      const response = await makeRequest(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

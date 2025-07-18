@@ -29,7 +29,23 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
-    open: true
+    open: true,
+    proxy: {
+      '/api': {
+        target: 'https://bonnie-backend-server.onrender.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+        secure: true,
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            console.log('Proxy error:', err);
+          });
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.log('Sending Request to:', proxyReq.getHeader('host') + proxyReq.path);
+          });
+        }
+      }
+    }
   },
   preview: {
     host: '0.0.0.0',
