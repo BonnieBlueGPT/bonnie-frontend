@@ -7,9 +7,30 @@ const CONSTANTS = {
     CHAT: 'https://bonnie-backend-server.onrender.com/bonnie-chat',
     ENTRY: 'https://bonnie-backend-server.onrender.com/bonnie-entry'
   },
-  TYPING_SPEEDS: { slow: 120, normal: 64, fast: 35 },
+  TYPING_SPEEDS: { 
+    slow: 120, 
+    normal: 64, 
+    fast: 35,
+    // Emotional speed modifiers
+    emotional: {
+      shy: 1.6,
+      vulnerable: 1.5,
+      sad: 1.4,
+      intimate: 1.2,
+      gentle: 1.1,
+      neutral: 1.0,
+      supportive: 0.9,
+      flirty: 0.8,
+      playful: 0.7,
+      teasing: 0.6,
+      passionate: 0.5,
+      dominant: 0.4
+    }
+  },
   IDLE_TIMEOUT: 30000,
   MAX_MESSAGES: 100,
+  MAX_EMOTIONAL_MEMORY: 20,
+  EMOTIONAL_DECAY_RATE: 0.1,
   COLORS: {
     primary: '#e91e63',
     online: '#28a745',
@@ -25,7 +46,10 @@ const CONSTANTS = {
     TEASING: 'teasing',
     GENTLE: 'gentle',
     PASSIONATE: 'passionate',
-    PLAYFUL: 'playful'
+    PLAYFUL: 'playful',
+    VULNERABLE: 'vulnerable',
+    DOMINANT: 'dominant',
+    SUBMISSIVE: 'submissive'
   },
   SENTIMENT_TYPES: {
     FLIRTY: 'flirty',
@@ -35,7 +59,29 @@ const CONSTANTS = {
     PLAYFUL: 'playful',
     SERIOUS: 'serious',
     TEASING: 'teasing',
-    VULNERABLE: 'vulnerable'
+    VULNERABLE: 'vulnerable',
+    PASSIONATE: 'passionate',
+    GENTLE: 'gentle',
+    DOMINANT: 'dominant',
+    SUBMISSIVE: 'submissive'
+  },
+  EMOTIONAL_INTENSITIES: {
+    LOW: 1,
+    MEDIUM: 2,
+    HIGH: 3,
+    EXTREME: 4
+  },
+  PERSONALITY_TRIGGERS: {
+    flirty: ['FLIRTATIOUS', 'TEASING', 'PLAYFUL'],
+    sad: ['SUPPORTIVE', 'GENTLE', 'VULNERABLE'],
+    vulnerable: ['SUPPORTIVE', 'GENTLE', 'PASSIONATE'],
+    intimate: ['PASSIONATE', 'GENTLE', 'VULNERABLE'],
+    playful: ['PLAYFUL', 'TEASING', 'FLIRTATIOUS'],
+    serious: ['SUPPORTIVE', 'GENTLE'],
+    passionate: ['PASSIONATE', 'FLIRTATIOUS', 'DOMINANT'],
+    teasing: ['TEASING', 'FLIRTATIOUS', 'PLAYFUL'],
+    dominant: ['DOMINANT', 'PASSIONATE', 'TEASING'],
+    submissive: ['SUBMISSIVE', 'VULNERABLE', 'GENTLE']
   },
   EMOJI_CONTEXTS: {
     FLIRTY: ['😘', '😏', '😉', '💋', '🔥'],
@@ -44,7 +90,10 @@ const CONSTANTS = {
     SUPPORTIVE: ['🥺', '💌', '🤗', '💜', '✨'],
     TEASING: ['😏', '😈', '🙄', '😌', '🤭'],
     PASSIONATE: ['🔥', '💫', '😍', '💖', '🌹'],
-    GENTLE: ['🥰', '💕', '🌸', '💫', '🦋']
+    GENTLE: ['🥰', '💕', '🌸', '💫', '🦋'],
+    VULNERABLE: ['🥺', '💔', '😢', '🤗', '💝'],
+    DOMINANT: ['😈', '🔥', '👑', '💪', '⚡'],
+    SUBMISSIVE: ['🥺', '😳', '💕', '🦋', '✨']
   }
 };
 
