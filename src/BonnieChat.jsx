@@ -347,6 +347,7 @@ export default function BonnieChat() {
   const [busy, setBusy] = useState(false);
   const [typing, setTyping] = useState(false);
   const [thinking, setThinking] = useState(false);
+  const [currentThinkingEmotion, setCurrentThinkingEmotion] = useState('neutral');
   const [currentPersonality, setCurrentPersonality] = useState(CONSTANTS.PERSONALITY_LAYERS.PLAYFUL);
   const [currentSentiment, setCurrentSentiment] = useState({ primary: 'neutral', intensity: 0 });
   const [online, setOnline] = useState(true);
@@ -393,67 +394,182 @@ export default function BonnieChat() {
     godLog("✅ Message Added", newMessage);
   }, []);
 
+  // God-tier EOM parser for sophisticated emotional breathing
+  const parseAdvancedEOM = useCallback((text) => {
+    // Match advanced EOM patterns: <EOM::pause=1000 speed=normal emotion=flirty>
+    const eomRegex = /<EOM::(?:pause=(\d+))?(?:\s+speed=(\w+))?(?:\s+emotion=([\w-]+))?>/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+    
+    while ((match = eomRegex.exec(text)) !== null) {
+      // Add text before EOM tag
+      if (match.index > lastIndex) {
+        parts.push({
+          text: text.slice(lastIndex, match.index).trim(),
+          pause: 0,
+          speed: 'normal',
+          emotion: 'neutral'
+        });
+      }
+      
+      // Parse EOM parameters
+      const pause = parseInt(match[1]) || 1000;
+      const speed = match[2] || 'normal';
+      const emotion = match[3] || 'neutral';
+      
+      parts.push({
+        text: '',
+        pause,
+        speed,
+        emotion,
+        isEOM: true
+      });
+      
+      lastIndex = eomRegex.lastIndex;
+    }
+    
+    // Add remaining text after last EOM
+    if (lastIndex < text.length) {
+      parts.push({
+        text: text.slice(lastIndex).trim(),
+        pause: 0,
+        speed: 'normal',
+        emotion: 'neutral'
+      });
+    }
+    
+    // If no EOM tags found, return single part
+    if (parts.length === 0) {
+      parts.push({
+        text: text.trim(),
+        pause: 0,
+        speed: 'normal',
+        emotion: 'neutral'
+      });
+    }
+    
+    return parts.filter(part => part.text || part.isEOM);
+  }, []);
+
   const simulateBonnieTyping = useCallback((reply, personality, sentiment) => {
     setTyping(false);
     setThinking(false);
     
-    // Split the message into parts at each <EOM> tag
-    const parts = reply.split('<EOM>').filter(part => part.trim());
+    // Parse the message with advanced EOM handling
+    const parts = parseAdvancedEOM(reply);
     
     if (parts.length === 0) {
       return;
     }
     
     let totalDelay = 0;
+    let currentEmotion = 'neutral';
     
-    // Process each part with appropriate delays
+    // Process each part with emotional breathing patterns
     parts.forEach((part, index) => {
-      const cleanPart = part.trim();
-      if (!cleanPart) return;
-      
-      // Calculate typing duration for this part
-      const partTypingDuration = Math.min(cleanPart.length * 30, 3000);
-      
-      // Add pause between parts (except for the first part)
-      const pauseDuration = index > 0 ? Math.min(1500 + (cleanPart.length * 10), 4000) : 0;
-      
-      // Show thinking indicator during pause
-      if (pauseDuration > 0) {
-        setTimeout(() => {
-          setTyping(false);
-          setThinking(true);
-          godLog("💭 Bonnie is thinking...", { part: cleanPart, pauseDuration });
-        }, totalDelay);
+      if (part.isEOM) {
+        // This is an EOM pause instruction
+        const emotionalMultiplier = {
+          'shy': 1.8,
+          'teasing': 0.7,
+          'flirty': 0.9,
+          'passionate': 1.3,
+          'intimate': 1.6,
+          'playful': 0.8,
+          'sad': 2.0,
+          'vulnerable': 1.9,
+          'dominant': 0.6,
+          'submissive': 1.4
+        };
         
-        totalDelay += pauseDuration;
+        const multiplier = emotionalMultiplier[part.emotion] || 1.0;
+        const emotionalPause = Math.floor(part.pause * multiplier);
+        currentEmotion = part.emotion;
+        
+                 // Show thinking/breathing indicator during emotional pause
+         setTimeout(() => {
+           setTyping(false);
+           setThinking(true);
+           setCurrentThinkingEmotion(part.emotion);
+           godLog(`💭 Bonnie is ${part.emotion === 'shy' ? 'hesitating' : 
+                                     part.emotion === 'flirty' ? 'smirking' :
+                                     part.emotion === 'passionate' ? 'breathing heavily' :
+                                     part.emotion === 'intimate' ? 'getting closer' :
+                                     part.emotion === 'vulnerable' ? 'taking a deep breath' :
+                                     'thinking'}...`, { 
+             emotion: part.emotion, 
+             pause: emotionalPause,
+             originalPause: part.pause 
+           });
+         }, totalDelay);
+        
+        totalDelay += emotionalPause;
+        return;
       }
       
-      // Show typing indicator before message
-      setTimeout(() => {
-        setThinking(false);
-        setTyping(true);
-      }, totalDelay);
+      if (!part.text) return;
       
-      // Add the message part after typing duration
+      // Calculate typing speed based on emotion
+      const speedMultipliers = {
+        'slow': 50,
+        'normal': 30,
+        'fast': 15
+      };
+      
+      const emotionalSpeedAdjustment = {
+        'shy': 1.5,
+        'teasing': 0.8,
+        'flirty': 0.9,
+        'passionate': 0.7,
+        'intimate': 1.2,
+        'playful': 0.8,
+        'sad': 1.4,
+        'vulnerable': 1.3,
+        'dominant': 0.6,
+        'submissive': 1.1
+      };
+      
+      const baseSpeed = speedMultipliers[part.speed] || 30;
+      const emotionAdjustment = emotionalSpeedAdjustment[currentEmotion] || 1.0;
+      const adjustedSpeed = baseSpeed * emotionAdjustment;
+      
+      const partTypingDuration = Math.min(part.text.length * adjustedSpeed, 4000);
+      
+             // Show typing indicator
+       setTimeout(() => {
+         setThinking(false);
+         setCurrentThinkingEmotion('neutral');
+         setTyping(true);
+       }, totalDelay);
+      
+      // Add the message part
       setTimeout(() => {
-        addMessage(cleanPart, 'bonnie', personality, sentiment);
+        addMessage(part.text, 'bonnie', personality, { 
+          ...sentiment, 
+          primary: currentEmotion,
+          intensity: part.emotion !== 'neutral' ? 3 : sentiment?.intensity || 1
+        });
         
-        // Clear indicators if this is the last part
-        if (index === parts.length - 1) {
-          setTyping(false);
-          setThinking(false);
-        }
+                 // Clear indicators if this is the last part
+         if (index === parts.length - 1) {
+           setTyping(false);
+           setThinking(false);
+           setCurrentThinkingEmotion('neutral');
+         }
       }, totalDelay + partTypingDuration);
       
       totalDelay += partTypingDuration;
     });
     
-    godLog("🎭 Enhanced EOM Processing", { 
-      originalMessage: reply, 
-      parts: parts.length, 
-      totalDuration: totalDelay 
+    godLog("🧬 God-Tier EOM Processing", { 
+      originalMessage: reply,
+      parsedParts: parts.length,
+      totalDuration: totalDelay,
+      emotions: parts.filter(p => p.isEOM).map(p => p.emotion),
+      pauses: parts.filter(p => p.isEOM).map(p => p.pause)
     });
-  }, [addMessage]);
+  }, [addMessage, parseAdvancedEOM]);
 
   const handleSend = useCallback(async () => {
     const text = input.trim();
@@ -483,7 +599,16 @@ export default function BonnieChat() {
         })
       });
       godLog("🔗 API Response", response);
-      simulateBonnieTyping(response.reply || "I'm here for you, darling 💕", adaptedPersonality, userSentiment);
+      
+      // Use the structured response from the backend brain
+      const messageToType = response.reply || response.message || "I'm here for you, darling 💕";
+      const responsePersonality = response.meta?.emotion || adaptedPersonality;
+      const responseSentiment = {
+        primary: response.meta?.emotion || userSentiment.primary,
+        intensity: response.meta?.bondScore ? Math.floor(response.meta.bondScore / 2) : userSentiment.intensity
+      };
+      
+      simulateBonnieTyping(messageToType, responsePersonality, responseSentiment);
     } catch (err) {
       godLog("❌ API Error", err);
       simulateBonnieTyping("Oops… I'm having some technical difficulties, but I'm still here! 💔", adaptedPersonality, userSentiment);
@@ -515,9 +640,32 @@ export default function BonnieChat() {
         
         {thinking && (
           <div style={styles.messageWrapper}>
-            <div style={styles.thinkingIndicator}>
-              <span style={styles.thinkingDot} className="thinking-dot">💭</span>
-              <span style={{...styles.thinkingText, marginLeft: '8px'}}>Bonnie is thinking...</span>
+            <div style={{
+              ...styles.thinkingIndicator,
+              ...(currentThinkingEmotion === 'passionate' && {animation: 'heartbeat 1s ease-in-out infinite'}),
+              ...(currentThinkingEmotion === 'shy' && {animation: 'breathe 4s ease-in-out infinite'}),
+              ...(currentThinkingEmotion === 'flirty' && {animation: 'float 1.5s ease-in-out infinite'})
+            }} className="thinking-indicator">
+              <span style={styles.thinkingDot} className="thinking-dot">
+                {currentThinkingEmotion === 'shy' ? '😳' :
+                 currentThinkingEmotion === 'flirty' ? '😏' :
+                 currentThinkingEmotion === 'passionate' ? '😍' :
+                 currentThinkingEmotion === 'intimate' ? '🥰' :
+                 currentThinkingEmotion === 'vulnerable' ? '🥺' :
+                 currentThinkingEmotion === 'teasing' ? '😈' :
+                 currentThinkingEmotion === 'sad' ? '😔' :
+                 currentThinkingEmotion === 'playful' ? '😜' : '💭'}
+              </span>
+              <span style={{...styles.thinkingText, marginLeft: '8px'}}>
+                {currentThinkingEmotion === 'shy' ? 'Bonnie is hesitating...' :
+                 currentThinkingEmotion === 'flirty' ? 'Bonnie is smirking...' :
+                 currentThinkingEmotion === 'passionate' ? 'Bonnie is breathing heavily...' :
+                 currentThinkingEmotion === 'intimate' ? 'Bonnie is getting closer...' :
+                 currentThinkingEmotion === 'vulnerable' ? 'Bonnie is taking a deep breath...' :
+                 currentThinkingEmotion === 'teasing' ? 'Bonnie is plotting something...' :
+                 currentThinkingEmotion === 'sad' ? 'Bonnie is processing...' :
+                 currentThinkingEmotion === 'playful' ? 'Bonnie is giggling...' : 'Bonnie is thinking...'}
+              </span>
             </div>
           </div>
         )}
