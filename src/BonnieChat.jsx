@@ -194,6 +194,26 @@ const styles = {
     border: '1px solid rgba(233, 30, 99, 0.1)',
     boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)',
   },
+  thinkingIndicator: {
+    display: 'flex',
+    alignItems: 'center',
+    padding: '0.75rem 1rem',
+    background: 'linear-gradient(135deg, rgba(233, 30, 99, 0.05) 0%, rgba(240, 98, 146, 0.05) 100%)',
+    borderRadius: '20px',
+    borderBottomLeftRadius: '4px',
+    border: '1px solid rgba(233, 30, 99, 0.2)',
+    boxShadow: '0 2px 10px rgba(233, 30, 99, 0.1)',
+  },
+  thinkingDot: {
+    fontSize: '1.2rem',
+    animation: 'float 2s ease-in-out infinite',
+  },
+  thinkingText: {
+    fontSize: '0.85rem',
+    color: '#e91e63',
+    fontStyle: 'italic',
+    opacity: 0.8,
+  },
   typingDot: {
     width: '8px',
     height: '8px',
