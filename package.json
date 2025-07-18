@@ -1,14 +1,18 @@
 {
-  "name": "bonnie-god-mode",
+  "name": "bonnie-frontend",
   "version": "2.0.0",
   "type": "module",
-  "description": "Bonnie's God Mode - The Ultimate Seductive AI Companion Experience",
-  "keywords": ["ai", "companion", "chat", "mobile-first", "seductive", "bonnie"],
-  "author": "TrainMyGirl",
+  "description": "Bonnie's God Mode - The Ultimate Mobile-First Seductive AI Companion Experience",
+  "keywords": ["ai", "companion", "chat", "mobile-first", "seductive", "bonnie", "frontend"],
+  "author": "BonnieBlueGPT",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/trainmygirl/bonnie-frontend"
+    "url": "https://github.com/BonnieBlueGPT/bonnie-frontend.git"
+  },
+  "homepage": "https://github.com/BonnieBlueGPT/bonnie-frontend",
+  "bugs": {
+    "url": "https://github.com/BonnieBlueGPT/bonnie-frontend/issues"
   },
   "scripts": {
     "dev": "vite --host 0.0.0.0",
