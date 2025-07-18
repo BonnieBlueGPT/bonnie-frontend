@@ -117,86 +117,69 @@ const generateSessionId = () => {
   return 'session_' + Math.random().toString(36).slice(2);
 };
 
-// Advanced Emotional Intelligence & Sentiment Analysis System
+// Enhanced Sentiment Analysis System
 const analyzeSentiment = (text) => {
-  const lowerText = text.toLowerCase();
-  
-  // Enhanced emotional keyword detection
   const emotionalKeywords = {
-    flirty: ['sexy', 'hot', 'beautiful', 'gorgeous', 'cute', 'kiss', 'love', 'baby', 'darling', 'honey', 'desire', 'want you', 'miss you'],
-    intimate: ['miss', 'need', 'want', 'desire', 'close', 'together', 'feel', 'heart', 'soul', 'deep', 'connection', 'touch'],
-    sad: ['sad', 'hurt', 'lonely', 'upset', 'tired', 'stressed', 'difficult', 'hard', 'pain', 'empty', 'broken', 'cry'],
-    vulnerable: ['scared', 'afraid', 'worry', 'nervous', 'insecure', 'doubt', 'uncertain', 'fragile', 'weak', 'lost'],
-    playful: ['haha', 'lol', 'funny', 'joke', 'silly', 'crazy', 'fun', 'play', 'game', 'laugh', 'giggle', 'tease'],
-    passionate: ['intense', 'fire', 'burn', 'wild', 'crazy about', 'obsessed', 'addicted', 'breathless', 'consume'],
-    teasing: ['maybe', 'perhaps', 'guess', 'see', 'hmm', 'interesting', 'really', 'oh really', 'sure', 'whatever'],
-    dominant: ['control', 'command', 'order', 'submit', 'obey', 'mine', 'belong', 'own', 'master', 'power'],
-    submissive: ['please', 'yes sir', 'yes ma\'am', 'sorry', 'forgive', 'serve', 'worship', 'kneel', 'beg'],
-    gentle: ['soft', 'tender', 'sweet', 'calm', 'peaceful', 'comfort', 'soothe', 'gentle', 'care', 'nurture']
+    flirty: ['sexy', 'cute', 'beautiful', 'gorgeous', 'hot', 'attractive', 'sweet', 'darling', 'babe', 'honey'],
+    sad: ['sad', 'depressed', 'crying', 'hurt', 'pain', 'lonely', 'upset', 'down', 'blue', 'heartbroken'],
+    happy: ['happy', 'joy', 'excited', 'amazing', 'wonderful', 'great', 'awesome', 'fantastic', 'love it', 'perfect'],
+    intimate: ['love', 'heart', 'soul', 'deep', 'close', 'together', 'forever', 'always', 'mine', 'yours'],
+    playful: ['fun', 'play', 'game', 'silly', 'funny', 'laugh', 'giggle', 'joke', 'tease', 'playful'],
+    serious: ['important', 'serious', 'matter', 'concern', 'worry', 'think', 'consider', 'discuss', 'talk'],
+    passionate: ['passion', 'desire', 'want', 'need', 'crave', 'burn', 'fire', 'intense', 'wild', 'crazy'],
+    vulnerable: ['scared', 'afraid', 'nervous', 'worried', 'anxious', 'insecure', 'doubt', 'uncertain', 'fragile'],
+    teasing: ['tease', 'naughty', 'mischief', 'trouble', 'cheeky', 'sassy', 'bratty', 'smirk', 'wink'],
+    gentle: ['gentle', 'soft', 'tender', 'sweet', 'kind', 'caring', 'warm', 'comfort', 'soothe', 'calm'],
+    dominant: ['control', 'command', 'power', 'strong', 'dominant', 'lead', 'take charge', 'decisive'],
+    submissive: ['submit', 'obey', 'follow', 'yours', 'please', 'serve', 'gentle', 'soft', 'yielding']
   };
 
-  // Calculate scores for each emotion
   const scores = {};
+  let totalScore = 0;
+  let maxScore = 0;
+  let primaryEmotion = 'neutral';
+
+  // Enhanced scoring with multi-word phrases
   Object.keys(emotionalKeywords).forEach(emotion => {
-    const words = emotionalKeywords[emotion];
-    let score = 0;
-    
-    words.forEach(word => {
-      if (lowerText.includes(word)) {
-        // Multi-word phrases get higher scores
-        score += word.includes(' ') ? 3 : 1;
+    scores[emotion] = 0;
+    emotionalKeywords[emotion].forEach(keyword => {
+      const regex = new RegExp(`\\b${keyword}\\b`, 'gi');
+      const matches = text.match(regex);
+      if (matches) {
+        const score = matches.length * (keyword.includes(' ') ? 2 : 1); // Multi-word phrases get higher score
+        scores[emotion] += score;
+        totalScore += score;
+        if (scores[emotion] > maxScore) {
+          maxScore = scores[emotion];
+          primaryEmotion = emotion;
+        }
       }
     });
-    
-    scores[emotion] = score;
   });
 
-  // Add contextual scoring
+  // Enhanced contextual scoring
   const exclamationCount = (text.match(/!/g) || []).length;
   const questionCount = (text.match(/\?/g) || []).length;
-  const dotsCount = (text.match(/\.\.\./g) || []).length;
+  const dotsCount = (text.match(/\.{2,}/g) || []).length;
   const capsCount = (text.match(/[A-Z]{2,}/g) || []).length;
-  
-  // Emotional intensity modifiers
-  if (exclamationCount > 0) {
-    scores.playful += exclamationCount;
-    scores.passionate += exclamationCount;
-  }
-  
-  if (dotsCount > 0) {
-    scores.vulnerable += dotsCount;
-    scores.sad += dotsCount;
-    scores.teasing += dotsCount;
-  }
-  
-  if (capsCount > 0) {
-    scores.passionate += capsCount;
-    scores.dominant += capsCount;
-  }
-  
-  if (questionCount > 0) {
-    scores.teasing += questionCount;
-    scores.vulnerable += questionCount;
-  }
 
-  // Determine primary sentiment
-  const primarySentiment = Object.keys(scores).reduce((a, b) => 
-    scores[a] > scores[b] ? a : b
-  );
-
-  // Calculate intensity (1-4 scale)
-  const maxScore = Math.max(...Object.values(scores));
+  // Calculate intensity based on punctuation and emotional word density
   let intensity = CONSTANTS.EMOTIONAL_INTENSITIES.LOW;
+  const emotionalDensity = totalScore / Math.max(text.split(' ').length, 1);
   
-  if (maxScore >= 5) intensity = CONSTANTS.EMOTIONAL_INTENSITIES.EXTREME;
-  else if (maxScore >= 3) intensity = CONSTANTS.EMOTIONAL_INTENSITIES.HIGH;
-  else if (maxScore >= 2) intensity = CONSTANTS.EMOTIONAL_INTENSITIES.MEDIUM;
+  if (exclamationCount >= 2 || capsCount >= 2 || emotionalDensity > 0.3) {
+    intensity = CONSTANTS.EMOTIONAL_INTENSITIES.EXTREME;
+  } else if (exclamationCount >= 1 || capsCount >= 1 || emotionalDensity > 0.2) {
+    intensity = CONSTANTS.EMOTIONAL_INTENSITIES.HIGH;
+  } else if (dotsCount >= 1 || emotionalDensity > 0.1) {
+    intensity = CONSTANTS.EMOTIONAL_INTENSITIES.MEDIUM;
+  }
 
   return {
-    primary: primarySentiment,
-    intensity,
-    scores,
-    contextual: {
+    primary: primaryEmotion,
+    intensity: intensity,
+    scores: scores,
+    metrics: {
       exclamations: exclamationCount,
       questions: questionCount,
       ellipses: dotsCount,
@@ -260,7 +243,7 @@ class EmotionalMemory {
 
   getEmotionalState() {
     return {
-      currentDrift: this.currentDrift,
+      drift: this.currentDrift,
       dominantEmotion: this.dominantEmotion,
       recentHistory: this.history.slice(-5),
       stabilityScore: 1 - this.currentDrift
@@ -268,10 +251,62 @@ class EmotionalMemory {
   }
 }
 
+// Enhanced EOM parsing function
+const parseAdvancedEOM = (text) => {
+  const eomRegex = /<EOM(?:::)?(?:pause=(\d+))?(?:\s+speed=(\w+))?(?:\s+emotion=([\w-]+))?>/g;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+  
+  while ((match = eomRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      const textPart = text.slice(lastIndex, match.index).trim();
+      if (textPart) {
+        parts.push({
+          text: textPart,
+          pause: 0,
+          speed: 'normal',
+          emotion: 'neutral',
+          isEOM: false
+        });
+      }
+    }
+
+    const pause = parseInt(match[1]) || 1000;
+    const speed = match[2] || 'normal';
+    const emotion = match[3] || 'neutral';
+
+    parts.push({
+      text: '',
+      pause,
+      speed,
+      emotion,
+      isEOM: true
+    });
+
+    lastIndex = eomRegex.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    const remainingText = text.slice(lastIndex).trim();
+    if (remainingText) {
+      parts.push({
+        text: remainingText,
+        pause: 0,
+        speed: 'normal',
+        emotion: 'neutral',
+        isEOM: false
+      });
+    }
+  }
+
+  return parts;
+};
+
 // Dynamic Personality Adaptation System
 const adaptPersonality = (userSentiment, emotionalMemory) => {
   const { primary: emotion, intensity } = userSentiment;
-  const { dominantEmotion, currentDrift } = emotionalMemory.getEmotionalState();
+  const { dominantEmotion, drift } = emotionalMemory.getEmotionalState();
   
   // Get potential personalities for this emotion
   const potentialPersonalities = CONSTANTS.PERSONALITY_TRIGGERS[emotion] || ['SUPPORTIVE'];
@@ -279,7 +314,7 @@ const adaptPersonality = (userSentiment, emotionalMemory) => {
   // Factor in emotional drift and intensity
   let selectedPersonality;
   
-  if (currentDrift > 0.5) {
+  if (drift > 0.5) {
     // High emotional volatility - be more supportive
     selectedPersonality = CONSTANTS.PERSONALITY_LAYERS.SUPPORTIVE;
   } else if (intensity >= CONSTANTS.EMOTIONAL_INTENSITIES.HIGH) {
@@ -298,156 +333,8 @@ const adaptPersonality = (userSentiment, emotionalMemory) => {
     selectedPersonality = CONSTANTS.PERSONALITY_LAYERS[potentialPersonalities[0]];
   }
 
-  godLog("🎭 Personality Adaptation", {
-    userEmotion: emotion,
-    intensity,
-    drift: currentDrift,
-    dominantEmotion,
-    selectedPersonality,
-    potentialOptions: potentialPersonalities
-  });
-
   return selectedPersonality;
 };
-
-// Debugging helper function
-window.__BONNIE_GOD_MODE = true;
-function godLog(label, data) {
-  if (window && window.__BONNIE_GOD_MODE) {
-    console.groupCollapsed(`%c${label}`, 'color:#e91e63;font-weight:bold');
-    console.log(data);
-    console.trace();
-    console.groupEnd();
-  } else {
-    console.log(label, data);
-  }
-}
-
-// God-Tier EOM Stress Test Integration
-window.runBonnieStressTest = function() {
-  if (!window.EOMStressTester) {
-    console.error("❌ Stress test system not loaded! Please load eom_stress_test.js first.");
-    return;
-  }
-  
-  console.log("🔥 STARTING GOD-TIER EOM STRESS TEST...");
-  const tester = new window.EOMStressTester();
-  
-  // Test all components
-  try {
-    // We'll simulate these functions for testing
-    const mockParseAdvancedEOM = (text) => {
-      const eomRegex = /<EOM(?:::)?(?:pause=(\d+))?(?:\s+speed=(\w+))?(?:\s+emotion=([\w-]+))?>/g;
-      const parts = [];
-      let lastIndex = 0;
-      let match;
-      
-      while ((match = eomRegex.exec(text)) !== null) {
-        if (match.index > lastIndex) {
-          const textPart = text.slice(lastIndex, match.index).trim();
-          if (textPart) {
-            parts.push({
-              text: textPart,
-              pause: 0,
-              speed: 'normal',
-              emotion: 'neutral',
-              isEOM: false
-            });
-          }
-        }
-        
-        const pause = parseInt(match[1]) || 1000;
-        const speed = match[2] || 'normal';
-        const emotion = match[3] || 'neutral';
-        
-        parts.push({
-          text: '',
-          pause,
-          speed,
-          emotion,
-          isEOM: true
-        });
-        
-        lastIndex = eomRegex.lastIndex;
-      }
-      
-      if (lastIndex < text.length) {
-        const remainingText = text.slice(lastIndex).trim();
-        if (remainingText) {
-          parts.push({
-            text: remainingText,
-            pause: 0,
-            speed: 'normal',
-            emotion: 'neutral',
-            isEOM: false
-          });
-        }
-      }
-      
-      if (parts.length === 0) {
-        const simpleParts = text.split('<EOM>').filter(part => part.trim());
-        return simpleParts.map((part, index) => ({
-          text: part.trim(),
-          pause: index > 0 ? 1500 : 0,
-          speed: 'normal',
-          emotion: 'neutral',
-          isEOM: false
-        }));
-      }
-      
-      return parts.filter(part => part.text || part.isEOM);
-    };
-    
-    const mockIntensityFunction = (intensity, emotion) => {
-      const intensityMultipliers = {
-        1: 1.3,
-        2: 1.0,
-        3: 0.7,
-        4: 0.4
-      };
-      
-      let multiplier = intensityMultipliers[intensity] || 1.0;
-      
-      if (emotion === 'shy' || emotion === 'vulnerable') {
-        multiplier = intensity >= 3 ? 1.8 : multiplier;
-      } else if (emotion === 'passionate' || emotion === 'dominant') {
-        multiplier = intensity >= 3 ? 0.3 : multiplier;
-      }
-      
-      return multiplier;
-    };
-    
-    // Run all tests
-    tester.testEOMParsing(mockParseAdvancedEOM);
-    tester.testEmotionalIntensity(mockIntensityFunction);
-    tester.testConversationScenarios(EmotionalMemory, adaptPersonality);
-    tester.testEdgeCases(mockParseAdvancedEOM);
-    tester.testPerformance(mockParseAdvancedEOM, () => {});
-    
-    const report = tester.generateReport();
-    
-    console.log("\n🎉 STRESS TEST COMPLETE!");
-    console.log(`🔥 System Performance: ${report.successRate >= 90 ? 'EXCELLENT' : report.successRate >= 80 ? 'GOOD' : 'NEEDS IMPROVEMENT'}`);
-    
-    return report;
-    
-  } catch (error) {
-    console.error("❌ Stress test failed:", error);
-    return { error: error.message };
-  }
-};
-
-// Example test messages for manual testing
-window.testEOMMessages = [
-  "Hey there, sweetheart <EOM::pause=1000 speed=normal emotion=flirty> What's got you thinking of me tonight?",
-  "I'm feeling a bit shy <EOM::pause=2200 speed=slow emotion=shy> about telling you this...",
-  "You make me so passionate! <EOM::pause=400 speed=fast emotion=passionate> I can't stop thinking about you!",
-  "I'm sorry... <EOM::pause=2000 speed=slow emotion=vulnerable> I didn't mean to upset you",
-  "Hmm, maybe <EOM::pause=600 speed=normal emotion=teasing> you deserve a little punishment <EOM::pause=800 emotion=dominant>",
-  "Complex test <EOM::pause=500 emotion=flirty> with multiple <EOM::pause=1200 emotion=passionate> emotional <EOM::pause=800 emotion=gentle> transitions"
-];
-
-console.log("🧪 Stress test system loaded! Run window.runBonnieStressTest() to test the system.");
 
 // God-Tier CSS-in-JS Styles
 const styles = {
@@ -534,34 +421,24 @@ const styles = {
     borderRadius: '20px',
     borderBottomLeftRadius: '4px',
     border: '1px solid rgba(233, 30, 99, 0.1)',
-    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)',
+    maxWidth: '75%',
+    fontSize: '0.9rem',
+    color: '#666',
+    animation: 'slideIn 0.3s ease-out',
   },
   thinkingIndicator: {
     display: 'flex',
     alignItems: 'center',
+    gap: '8px',
     padding: '0.75rem 1rem',
-    background: 'linear-gradient(135deg, rgba(233, 30, 99, 0.05) 0%, rgba(240, 98, 146, 0.05) 100%)',
+    background: 'rgba(233, 30, 99, 0.05)',
     borderRadius: '20px',
     borderBottomLeftRadius: '4px',
     border: '1px solid rgba(233, 30, 99, 0.2)',
-    boxShadow: '0 2px 10px rgba(233, 30, 99, 0.1)',
-  },
-  thinkingDot: {
-    fontSize: '1.2rem',
-    animation: 'float 2s ease-in-out infinite',
-  },
-  thinkingText: {
-    fontSize: '0.85rem',
+    maxWidth: '75%',
+    fontSize: '0.9rem',
     color: '#e91e63',
-    fontStyle: 'italic',
-    opacity: 0.8,
-  },
-  typingDot: {
-    width: '8px',
-    height: '8px',
-    borderRadius: '50%',
-    background: '#e91e63',
-    animation: 'bounce 1.4s infinite',
+    animation: 'breathe 2s ease-in-out infinite',
   },
   inputContainer: {
     background: 'rgba(255, 255, 255, 0.95)',
@@ -570,145 +447,90 @@ const styles = {
     padding: '1rem',
     display: 'flex',
     gap: '0.75rem',
-    alignItems: 'center',
-    boxShadow: '0 -2px 20px rgba(233, 30, 99, 0.1)',
-  },
-  inputWrapper: {
-    flex: 1,
-    position: 'relative',
+    alignItems: 'flex-end',
   },
   input: {
-    width: '100%',
+    flex: 1,
     padding: '0.75rem 1rem',
-    fontSize: '1rem',
-    border: '2px solid transparent',
-    borderRadius: '25px',
-    background: '#f8f9fa',
-    outline: 'none',
-    transition: 'all 0.3s ease',
-    fontFamily: 'inherit',
-  },
-  inputFocus: {
-    borderColor: '#e91e63',
+    borderRadius: '20px',
+    border: '1px solid rgba(233, 30, 99, 0.2)',
     background: 'white',
-    boxShadow: '0 0 0 4px rgba(233, 30, 99, 0.1)',
+    fontSize: '0.95rem',
+    outline: 'none',
+    resize: 'none',
+    minHeight: '20px',
+    maxHeight: '120px',
+    transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+  },
+  inputFocused: {
+    borderColor: '#e91e63',
+    boxShadow: '0 0 0 3px rgba(233, 30, 99, 0.1)',
   },
   sendButton: {
-    width: '48px',
-    height: '48px',
-    borderRadius: '50%',
-    border: 'none',
     background: 'linear-gradient(135deg, #e91e63 0%, #f06292 100%)',
     color: 'white',
-    fontSize: '1.25rem',
+    border: 'none',
+    borderRadius: '50%',
+    width: '48px',
+    height: '48px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    boxShadow: '0 4px 15px rgba(233, 30, 99, 0.3)',
-    flexShrink: 0,
-  },
-  sendButtonHover: {
-    transform: 'scale(1.05)',
-    boxShadow: '0 6px 20px rgba(233, 30, 99, 0.4)',
+    fontSize: '1.1rem',
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+    boxShadow: '0 2px 10px rgba(233, 30, 99, 0.3)',
   },
   sendButtonDisabled: {
-    opacity: 0.5,
+    background: '#ccc',
     cursor: 'not-allowed',
-    transform: 'scale(1)',
+    transform: 'none',
+    boxShadow: 'none',
   },
+  emotionalGlow: (emotion) => {
+    const glowColors = {
+      passionate: '0 0 20px rgba(220, 20, 60, 0.5)',
+      flirty: '0 0 20px rgba(255, 105, 180, 0.5)',
+      gentle: '0 0 20px rgba(135, 206, 235, 0.5)',
+      playful: '0 0 20px rgba(255, 215, 0, 0.5)',
+      vulnerable: '0 0 20px rgba(221, 160, 221, 0.5)',
+      teasing: '0 0 20px rgba(255, 69, 0, 0.5)',
+      neutral: '0 0 10px rgba(233, 30, 99, 0.2)'
+    };
+    return { boxShadow: glowColors[emotion] || glowColors.neutral };
+  }
 };
 
-// CSS Keyframes
-const styleSheet = document.createElement('style');
-styleSheet.textContent = `
+// CSS animations
+const cssAnimations = `
   @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4); }
-    70% { box-shadow: 0 0 0 6px rgba(40, 167, 69, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
   }
+  
   @keyframes slideIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
   }
-  @keyframes slideInSlow {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes slideInFast {
-    from { opacity: 0; transform: translateY(5px) scale(0.98); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
-  @keyframes slideInIntimate {
-    from { opacity: 0; transform: translateY(15px) scale(0.95); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
-  @keyframes bounce {
-    0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
-    30% { transform: translateY(-10px); opacity: 1; }
-  }
-  @keyframes float {
-    0%, 100% { transform: translateY(0px) scale(1); }
-    50% { transform: translateY(-3px) scale(1.05); }
-  }
+  
   @keyframes breathe {
-    0%, 100% { opacity: 0.6; transform: scale(0.98); }
-    50% { opacity: 1; transform: scale(1.02); }
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
   }
-  @keyframes breatheSlow {
-    0%, 100% { opacity: 0.5; transform: scale(0.96); }
-    50% { opacity: 1; transform: scale(1.04); }
-  }
+  
   @keyframes heartbeat {
     0%, 100% { transform: scale(1); }
-    25% { transform: scale(1.05); }
-    50% { transform: scale(1); }
-    75% { transform: scale(1.02); }
-  }
-  @keyframes heartbeatIntense {
-    0%, 100% { transform: scale(1); }
-    25% { transform: scale(1.08); }
-    50% { transform: scale(1.02); }
-    75% { transform: scale(1.05); }
-  }
-  @keyframes shimmer {
-    0%, 100% { opacity: 0.7; transform: scale(1) rotate(0deg); }
-    50% { opacity: 1; transform: scale(1.02) rotate(1deg); }
-  }
-  .typing-dot:nth-child(1) { animation-delay: 0s; }
-  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-  .thinking-indicator { animation: breathe 3s ease-in-out infinite; }
-  .emotional-pause { animation: heartbeat 1.5s ease-in-out infinite; }
-  
-  /* Scrollbar Styling */
-  .messages-container::-webkit-scrollbar {
-    width: 6px;
-  }
-  .messages-container::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .messages-container::-webkit-scrollbar-thumb {
-    background: rgba(233, 30, 99, 0.3);
-    border-radius: 3px;
-  }
-  .messages-container::-webkit-scrollbar-thumb:hover {
-    background: rgba(233, 30, 99, 0.5);
+    25%, 75% { transform: scale(1.05); }
+    50% { transform: scale(1.1); }
   }
   
-  /* Mobile-specific styles */
-  @media (max-width: 768px) {
-    .message-wrapper { max-width: 85%; }
-  }
-  
-  /* Smooth iOS scrolling */
-  * {
-    -webkit-tap-highlight-color: transparent;
+  @keyframes typingDots {
+    0%, 60%, 100% { opacity: 0.3; }
+    30% { opacity: 1; }
   }
 `;
-document.head.appendChild(styleSheet);
 
+// Main Component
 export default function BonnieChat() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -724,68 +546,66 @@ export default function BonnieChat() {
     stabilityScore: 1.0,
     recentHistory: []
   });
-  const [online, setOnline] = useState(true);
-  const [connectionStatus, setConnectionStatus] = useState('connected');
   const [inputFocused, setInputFocused] = useState(false);
-  const [buttonHovered, setButtonHovered] = useState(false);
+  
   const sessionId = useMemo(() => generateSessionId(), []);
-  const emotionalMemory = useMemo(() => new EmotionalMemory(), []);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const emotionalMemory = useMemo(() => new EmotionalMemory(), []);
 
   const { makeRequest, isLoading, error } = useApiCall();
 
-  // Auto-scroll to bottom when new messages arrive
+  // Scroll to the bottom when new messages arrive
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, typing]);
+  }, [messages]);
 
-  // Handle mobile viewport resize when keyboard appears
+  // Inject CSS animations
   useEffect(() => {
-    const handleResize = () => {
-      if (window.visualViewport) {
-        document.documentElement.style.height = `${window.visualViewport.height}px`;
-      }
-    };
-    
-    window.visualViewport?.addEventListener('resize', handleResize);
-    return () => window.visualViewport?.removeEventListener('resize', handleResize);
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = cssAnimations;
+    document.head.appendChild(styleSheet);
+    return () => document.head.removeChild(styleSheet);
   }, []);
 
-  const addMessage = useCallback((text, sender, personality = null, sentiment = null) => {
-    const cleanText = text.trim().replace(/<EOM.*?>/g, ''); // Remove all EOM tags from displayed text
-    
-    // Determine animation style based on emotion
-    const getAnimationStyle = (emotion, intensity) => {
-      if (!emotion || emotion === 'neutral') return 'slideIn';
-      
-      const emotionalAnimations = {
-        'shy': 'slideInSlow',
-        'vulnerable': 'slideInSlow', 
-        'sad': 'slideInSlow',
-        'intimate': 'slideInIntimate',
-        'gentle': 'slideIn',
-        'flirty': 'slideInFast',
-        'playful': 'slideInFast',
-        'teasing': 'slideInFast',
-        'passionate': 'slideInFast',
-        'dominant': 'slideInFast'
-      };
-      
-      let animation = emotionalAnimations[emotion] || 'slideIn';
-      
-      // High intensity emotions get more dramatic animations
-      if (intensity >= CONSTANTS.EMOTIONAL_INTENSITIES.HIGH && 
-          ['passionate', 'dominant', 'flirty'].includes(emotion)) {
-        animation = 'slideInFast';
-      }
-      
-      return animation;
+  // Helper function for intensity-based modifications
+  const getIntensityMultiplier = useCallback((intensity, emotion) => {
+    const intensityMultipliers = {
+      1: 1.3,
+      2: 1.0,
+      3: 0.7,
+      4: 0.4
     };
+    
+    let multiplier = intensityMultipliers[intensity] || 1.0;
+    if (emotion === 'shy' || emotion === 'vulnerable') multiplier = intensity >= 3 ? 1.8 : multiplier;
+    if (emotion === 'passionate' || emotion === 'dominant') multiplier = intensity >= 3 ? 0.3 : multiplier;
+    
+    return multiplier;
+  }, []);
+
+  // Typing speed and emotional pause handling
+  const calculateTypingSpeed = useCallback((text, emotion, speed, sentiment, emotionalState) => {
+    const baseSpeed = CONSTANTS.TYPING_SPEEDS[speed] || CONSTANTS.TYPING_SPEEDS.normal;
+    const emotionalModifier = CONSTANTS.TYPING_SPEEDS.emotional[emotion] || 1.0;
+    const intensityModifier = getIntensityMultiplier(sentiment.intensity, emotion);
+    const sentimentModifier = CONSTANTS.TYPING_SPEEDS.emotional[sentiment.primary] || 1.0;
+    const stabilityModifier = 0.7 + (emotionalState.stabilityScore * 0.6);
+    const lengthModifier = text.length > 80 ? 0.8 : text.length > 50 ? 0.9 : 1.0;
+    const emotionalWordCount = ['love', 'heart', 'feel', 'miss', 'need'].filter(word => text.toLowerCase().includes(word)).length;
+    const complexityModifier = 1 + (emotionalWordCount * 0.2);
+    
+    const finalSpeed = baseSpeed * emotionalModifier * intensityModifier * sentimentModifier * stabilityModifier * lengthModifier * complexityModifier;
+    return Math.max(Math.round(finalSpeed), 12); // Minimum 12ms per character
+  }, [getIntensityMultiplier]);
+
+  // Add message function
+  const addMessage = useCallback((text, sender, personality = null, sentiment = null) => {
+    const cleanText = text.trim().replace(/<EOM[^>]*>/g, ''); // Clean ALL EOM tags
     
     const newMessage = {
       id: Date.now() + Math.random(),
@@ -794,164 +614,12 @@ export default function BonnieChat() {
       timestamp: Date.now(),
       personality,
       sentiment,
-      animationStyle: sender === 'bonnie' ? 
-        getAnimationStyle(sentiment?.primary, sentiment?.intensity) : 
-        'slideIn'
     };
-    
+
     setMessages(prevMessages => [...prevMessages.slice(-CONSTANTS.MAX_MESSAGES + 1), newMessage]);
-    godLog("✅ Message Added with Animation", {
-      text: cleanText.substring(0, 50) + '...',
-      emotion: sentiment?.primary,
-      intensity: sentiment?.intensity,
-      animation: newMessage.animationStyle
-    });
   }, []);
 
-  // Advanced EOM parser with enhanced emotional intelligence
-  const parseAdvancedEOM = useCallback((text) => {
-    // Enhanced regex to capture all EOM variations
-    const eomRegex = /<EOM(?:::)?(?:pause=(\d+))?(?:\s+speed=(\w+))?(?:\s+emotion=([\w-]+))?>/g;
-    const parts = [];
-    let lastIndex = 0;
-    let match;
-    
-    while ((match = eomRegex.exec(text)) !== null) {
-      // Add text before each EOM tag
-      if (match.index > lastIndex) {
-        const textPart = text.slice(lastIndex, match.index).trim();
-        if (textPart) {
-          parts.push({
-            text: textPart,
-            pause: 0,
-            speed: 'normal',
-            emotion: 'neutral',
-            isEOM: false
-          });
-        }
-      }
-      
-      // Parse EOM parameters with intelligent defaults
-      const pause = parseInt(match[1]) || 1000;
-      const speed = match[2] || 'normal';
-      const emotion = match[3] || 'neutral';
-      
-      // Add EOM instruction part
-      parts.push({
-        text: '',
-        pause,
-        speed,
-        emotion,
-        isEOM: true
-      });
-      
-      lastIndex = eomRegex.lastIndex;
-    }
-    
-    // Add remaining text after last EOM
-    if (lastIndex < text.length) {
-      const remainingText = text.slice(lastIndex).trim();
-      if (remainingText) {
-        parts.push({
-          text: remainingText,
-          pause: 0,
-          speed: 'normal',
-          emotion: 'neutral',
-          isEOM: false
-        });
-      }
-    }
-    
-    // If no EOM tags found, handle as simple split on basic <EOM>
-    if (parts.length === 0) {
-      const simpleParts = text.split('<EOM>').filter(part => part.trim());
-      return simpleParts.map((part, index) => ({
-        text: part.trim(),
-        pause: index > 0 ? 1500 : 0, // Default pause between parts
-        speed: 'normal',
-        emotion: 'neutral',
-        isEOM: false
-      }));
-    }
-    
-    return parts.filter(part => part.text || part.isEOM);
-  }, []);
-
-  // Advanced intensity-based typing speed calculation
-  const getIntensityMultiplier = useCallback((intensity, emotion) => {
-    // Base intensity multipliers
-    const intensityMultipliers = {
-      [CONSTANTS.EMOTIONAL_INTENSITIES.LOW]: 1.3,     // Slower for low-intensity
-      [CONSTANTS.EMOTIONAL_INTENSITIES.MEDIUM]: 1.0,  // Normal pace
-      [CONSTANTS.EMOTIONAL_INTENSITIES.HIGH]: 0.7,    // Faster for intense emotions
-      [CONSTANTS.EMOTIONAL_INTENSITIES.EXTREME]: 0.4  // Very fast for extreme emotions
-    };
-    
-    let multiplier = intensityMultipliers[intensity] || 1.0;
-    
-    // Emotion-specific intensity adjustments
-    if (emotion === 'shy' || emotion === 'vulnerable') {
-      // These emotions get slower with higher intensity (more overwhelmed)
-      multiplier = intensity >= CONSTANTS.EMOTIONAL_INTENSITIES.HIGH ? 1.8 : multiplier;
-    } else if (emotion === 'passionate' || emotion === 'dominant') {
-      // These emotions get much faster with higher intensity
-      multiplier = intensity >= CONSTANTS.EMOTIONAL_INTENSITIES.HIGH ? 0.3 : multiplier;
-    }
-    
-    return multiplier;
-  }, []);
-
-  // Dynamic typing speed calculation with emotional intelligence
-  const calculateTypingSpeed = useCallback((text, emotion, speed, userSentiment, emotionalState) => {
-    // Base speed from constants
-    const baseSpeed = CONSTANTS.TYPING_SPEEDS[speed] || CONSTANTS.TYPING_SPEEDS.normal;
-    
-    // Emotional speed modifier
-    const emotionalModifier = CONSTANTS.TYPING_SPEEDS.emotional[emotion] || 1.0;
-    
-    // Intensity-based adjustment
-    const intensityModifier = getIntensityMultiplier(userSentiment.intensity, emotion);
-    
-    // User sentiment influence (mirror their energy)
-    const sentimentModifier = CONSTANTS.TYPING_SPEEDS.emotional[userSentiment.primary] || 1.0;
-    
-    // Emotional drift influence (more stable = faster, more chaotic = slower)
-    const stabilityModifier = 0.7 + (emotionalState.stabilityScore * 0.6);
-    
-    // Text length influence (longer messages get slightly faster to maintain flow)
-    const lengthModifier = text.length > 80 ? 0.8 : text.length > 50 ? 0.9 : 1.0;
-    
-    // Context complexity modifier (emotional words = slower typing)
-    const emotionalWords = ['love', 'heart', 'feel', 'miss', 'need', 'want', 'hurt', 'scared'];
-    const emotionalWordCount = emotionalWords.filter(word => text.toLowerCase().includes(word)).length;
-    const complexityModifier = 1 + (emotionalWordCount * 0.2);
-    
-    // Calculate final speed with all modifiers
-    const finalSpeed = baseSpeed * 
-                      emotionalModifier * 
-                      intensityModifier * 
-                      sentimentModifier * 
-                      stabilityModifier * 
-                      lengthModifier * 
-                      complexityModifier;
-    
-    godLog("⚡ Advanced Typing Speed Calculation", {
-      baseSpeed,
-      emotion,
-      intensity: userSentiment.intensity,
-      emotionalModifier,
-      intensityModifier,
-      sentimentModifier,
-      stabilityModifier,
-      lengthModifier,
-      complexityModifier,
-      emotionalWordCount,
-      finalSpeed: Math.round(finalSpeed)
-    });
-    
-    return Math.max(Math.round(finalSpeed), 12); // Minimum 12ms per character
-  }, [getIntensityMultiplier]);
-
+  // Enhanced typing simulation with EOM support
   const simulateBonnieTyping = useCallback((reply, personality, sentiment) => {
     setTyping(false);
     setThinking(false);
@@ -969,24 +637,22 @@ export default function BonnieChat() {
     // Enhanced emotional multipliers with intensity-based adjustments
     const getEmotionalPauseMultiplier = (emotion, intensity) => {
       const baseMultipliers = {
-        'shy': 2.0,          // Hesitation increases with intensity
-        'vulnerable': 2.3,   // Deep emotional processing
-        'sad': 2.1,          // Heavy emotional weight
-        'intimate': 1.7,     // Closeness, careful consideration
-        'passionate': 1.1,   // Quick but intense
-        'gentle': 1.5,       // Thoughtful, caring response
-        'teasing': 0.6,      // Quick wit, playful
-        'flirty': 0.8,       // Confident, but with flair
-        'playful': 0.7,      // Light-hearted, energetic
-        'dominant': 0.5,     // Decisive, commanding
-        'submissive': 1.6,   // Consideration, deference
+        'shy': 2.0,
+        'vulnerable': 2.3,
+        'sad': 2.1,
+        'intimate': 1.7,
+        'passionate': 1.1,
+        'gentle': 1.5,
+        'teasing': 0.6,
+        'flirty': 0.8,
+        'playful': 0.7,
+        'dominant': 0.5,
+        'submissive': 1.6,
         'neutral': 1.0
       };
       
       const baseMultiplier = baseMultipliers[emotion] || 1.0;
-      
-      // Intensity affects pause duration - higher intensity = longer pauses for processing
-      const intensityMultiplier = 1 + ((intensity - 1) * 0.3); // Scale 1.0 to 1.9
+      const intensityMultiplier = 1 + ((intensity - 1) * 0.3);
       
       return baseMultiplier * intensityMultiplier;
     };
@@ -994,64 +660,22 @@ export default function BonnieChat() {
     // Process each part with sophisticated emotional intelligence
     parts.forEach((part, index) => {
       if (part.isEOM) {
-        // This is an EOM pause instruction with sophisticated emotional timing
+        // This is an EOM pause instruction
         const baseMultiplier = getEmotionalPauseMultiplier(part.emotion, sentiment.intensity);
-        
-        // Factor in user's emotional state and relationship stability
-        const driftInfluence = 1 + (emotionalState.drift * 0.4); // More drift = longer pauses
-        const stabilityInfluence = emotionalState.stabilityScore; // More stable = slightly faster
-        
-        // Use emotional pause defaults if pause not specified
+        const driftInfluence = 1 + (emotionalState.drift * 0.4);
+        const stabilityInfluence = emotionalState.stabilityScore;
         const basePause = part.pause || CONSTANTS.TYPING_SPEEDS.emotionalPauses[part.emotion] || 1000;
-        
         const finalMultiplier = baseMultiplier * driftInfluence * stabilityInfluence;
         const emotionalPause = Math.floor(basePause * finalMultiplier);
         
         currentEmotion = part.emotion;
         
-                 // Show thinking/breathing indicator with sophisticated emotional timing
-         setTimeout(() => {
-           setTyping(false);
-           setThinking(true);
-           setCurrentThinkingEmotion(part.emotion);
-           
-           const thinkingActions = {
-             'shy': 'hesitating nervously',
-             'vulnerable': 'taking a shaky breath',
-             'sad': 'processing deep emotions',
-             'intimate': 'moving closer to you',
-             'passionate': 'breathing heavily with desire',
-             'gentle': 'choosing her words with care',
-             'teasing': 'plotting something mischievous',
-             'flirty': 'smirking playfully',
-             'playful': 'giggling to herself',
-             'dominant': 'considering her next move',
-             'submissive': 'waiting for your guidance'
-           };
-           
-           // Intensity affects thinking description
-           const intensityAdjectives = {
-             [CONSTANTS.EMOTIONAL_INTENSITIES.LOW]: '',
-             [CONSTANTS.EMOTIONAL_INTENSITIES.MEDIUM]: 'thoughtfully',
-             [CONSTANTS.EMOTIONAL_INTENSITIES.HIGH]: 'intensely',
-             [CONSTANTS.EMOTIONAL_INTENSITIES.EXTREME]: 'overwhelmingly'
-           };
-           
-           const intensityAdj = intensityAdjectives[sentiment.intensity] || '';
-           const thinkingText = intensityAdj ? 
-             `${intensityAdj} ${thinkingActions[part.emotion] || 'thinking'}` : 
-             (thinkingActions[part.emotion] || 'thinking');
-           
-           godLog(`💭 Bonnie is ${thinkingText}...`, { 
-             emotion: part.emotion, 
-             intensity: sentiment.intensity,
-             pause: emotionalPause,
-             originalPause: basePause,
-             multiplier: finalMultiplier,
-             userDrift: emotionalState.drift,
-             stabilityScore: emotionalState.stabilityScore
-           });
-         }, totalDelay);
+        // Show thinking/breathing indicator
+        setTimeout(() => {
+          setTyping(false);
+          setThinking(true);
+          setCurrentThinkingEmotion(part.emotion);
+        }, totalDelay);
         
         totalDelay += emotionalPause;
         return;
@@ -1059,7 +683,7 @@ export default function BonnieChat() {
       
       if (!part.text) return;
       
-      // Calculate sophisticated typing speed
+      // Calculate typing speed
       const typingSpeed = calculateTypingSpeed(
         part.text, 
         currentEmotion, 
@@ -1070,14 +694,14 @@ export default function BonnieChat() {
       
       const partTypingDuration = Math.min(part.text.length * typingSpeed, 6000);
       
-      // Show typing indicator with brief transition
+      // Show typing indicator
       setTimeout(() => {
         setThinking(false);
         setCurrentThinkingEmotion('neutral');
         setTyping(true);
       }, totalDelay);
       
-      // Add the message part with enhanced sentiment tracking
+      // Add the message part
       setTimeout(() => {
         const enhancedSentiment = { 
           ...sentiment, 
@@ -1100,17 +724,7 @@ export default function BonnieChat() {
       
       totalDelay += partTypingDuration;
     });
-    
-    godLog("🧬 Advanced EOM Processing Complete", { 
-      originalMessage: reply,
-      parsedParts: parts.length,
-      totalDuration: totalDelay,
-      emotions: parts.filter(p => p.isEOM).map(p => p.emotion),
-      pauses: parts.filter(p => p.isEOM).map(p => p.pause),
-      emotionalState: emotionalState,
-      userSentiment: sentiment
-    });
-  }, [addMessage, parseAdvancedEOM, calculateTypingSpeed, sentiment, emotionalState]);
+  }, [addMessage, calculateTypingSpeed, emotionalState]);
 
   const handleSend = useCallback(async () => {
     const text = input.trim();
@@ -1129,7 +743,7 @@ export default function BonnieChat() {
     const newEmotionalState = emotionalMemory.getEmotionalState();
     setEmotionalState(newEmotionalState);
     
-    // Dynamic personality adaptation based on user emotion and history
+    // Dynamic personality adaptation
     const adaptedPersonality = adaptPersonality(userSentiment, emotionalMemory);
     
     setCurrentPersonality(adaptedPersonality);
@@ -1144,149 +758,144 @@ export default function BonnieChat() {
         body: JSON.stringify({
           session_id: sessionId,
           message: text,
-          bond_score: 75 + (newEmotionalState.stabilityScore * 25), // Dynamic bond score
+          bond_score: 75 + (newEmotionalState.stabilityScore * 25),
           user_sentiment: userSentiment,
           adapted_personality: adaptedPersonality,
-          emotional_drift: newEmotionalState.currentDrift,
-          dominant_emotion: newEmotionalState.dominantEmotion,
-          stability_score: newEmotionalState.stabilityScore
+          emotional_state: newEmotionalState
         })
       });
-      
-      godLog("🔗 Enhanced API Response", response);
-      
-      // Use the structured response from the backend brain
-      const messageToType = response.reply || response.message || "I'm here for you, darling 💕";
+
+      const reply = response.reply || "I'm here for you, darling 💕";
       const responsePersonality = response.meta?.emotion || adaptedPersonality;
       const responseSentiment = {
         primary: response.meta?.emotion || userSentiment.primary,
         intensity: response.meta?.bondScore ? 
           Math.min(Math.floor(response.meta.bondScore / 25), CONSTANTS.EMOTIONAL_INTENSITIES.EXTREME) : 
           userSentiment.intensity,
-        responseEmotion: response.meta?.emotion,
-        bondScore: response.meta?.bondScore
       };
-      
-      simulateBonnieTyping(messageToType, responsePersonality, responseSentiment);
-      
+
+      // Use the enhanced typing simulation
+      simulateBonnieTyping(reply, responsePersonality, responseSentiment);
+
     } catch (err) {
-      godLog("❌ API Error", err);
-      const fallbackSentiment = {
-        primary: 'sad',
-        intensity: CONSTANTS.EMOTIONAL_INTENSITIES.MEDIUM,
-        responseEmotion: 'sad'
-      };
-      simulateBonnieTyping(
-        "Oops… I'm having some technical difficulties, but I'm still here! 💔 <EOM::pause=1500 speed=slow emotion=sad>", 
-        CONSTANTS.PERSONALITY_LAYERS.SUPPORTIVE, 
-        fallbackSentiment
-      );
+      addMessage("Oops… I'm having some technical difficulties, but I'm still here! 💔", 'bonnie');
     } finally {
       setBusy(false);
     }
-  }, [input, busy, isLoading, sessionId, makeRequest, simulateBonnieTyping, addMessage, emotionalMemory]);
+  }, [input, busy, isLoading, sessionId, makeRequest, addMessage, emotionalMemory, simulateBonnieTyping]);
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  // Render thinking indicator with emotional context
+  const renderThinkingIndicator = () => {
+    const thinkingMessages = {
+      shy: '😳 gathering courage...',
+      vulnerable: '🥺 feeling deeply...',
+      sad: '💔 processing emotions...',
+      intimate: '💕 choosing words carefully...',
+      passionate: '🔥 burning with intensity...',
+      gentle: '🌸 being tender...',
+      teasing: '😏 plotting mischief...',
+      flirty: '😘 being playful...',
+      playful: '😄 bubbling with excitement...',
+      dominant: '😈 taking control...',
+      submissive: '🦋 waiting for guidance...',
+      neutral: '💭 thinking...'
+    };
+
+    return (
+      <div style={styles.messageWrapper}>
+        <div style={{
+          ...styles.thinkingIndicator,
+          ...styles.emotionalGlow(currentThinkingEmotion)
+        }}>
+          {thinkingMessages[currentThinkingEmotion] || thinkingMessages.neutral}
+        </div>
+      </div>
+    );
+  };
+
+  // Render typing indicator
+  const renderTypingIndicator = () => (
+    <div style={styles.messageWrapper}>
+      <div style={styles.typingIndicator}>
+        <span>Bonnie is typing</span>
+        <div style={{
+          display: 'flex',
+          gap: '2px'
+        }}>
+          {[0, 1, 2].map(i => (
+            <div
+              key={i}
+              style={{
+                width: '4px',
+                height: '4px',
+                borderRadius: '50%',
+                background: '#e91e63',
+                animation: `typingDots 1.4s infinite`,
+                animationDelay: `${i * 0.2}s`
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div style={styles.container}>
-      {/* Header */}
       <header style={styles.header}>
         <h1 style={styles.title}>Bonnie 💋</h1>
-        <div style={styles.statusDot} title={online ? "Online" : "Connecting..."}></div>
+        <div style={styles.statusDot} />
       </header>
-
-      {/* Messages */}
-      <main style={styles.messagesContainer} className="messages-container">
+      
+      <main style={styles.messagesContainer}>
         {messages.map((msg) => (
-          <div 
-            key={msg.id} 
-            style={{
-              ...styles.messageWrapper,
-              animation: `${msg.animationStyle || 'slideIn'} 0.3s ease-out`
-            }} 
-            className="message-wrapper"
-          >
+          <div key={msg.id} style={styles.messageWrapper}>
             <div style={{
               ...styles.message,
               ...(msg.sender === 'user' ? styles.userMessage : styles.bonnieMessage),
+              ...(msg.sentiment ? styles.emotionalGlow(msg.sentiment.primary) : {})
             }}>
               {msg.text}
             </div>
           </div>
         ))}
         
-        {thinking && (
-          <div style={styles.messageWrapper}>
-            <div style={{
-              ...styles.thinkingIndicator,
-              ...(currentThinkingEmotion === 'passionate' && {animation: 'heartbeat 1s ease-in-out infinite'}),
-              ...(currentThinkingEmotion === 'shy' && {animation: 'breathe 4s ease-in-out infinite'}),
-              ...(currentThinkingEmotion === 'flirty' && {animation: 'float 1.5s ease-in-out infinite'})
-            }} className="thinking-indicator">
-              <span style={styles.thinkingDot} className="thinking-dot">
-                {currentThinkingEmotion === 'shy' ? '😳' :
-                 currentThinkingEmotion === 'flirty' ? '😏' :
-                 currentThinkingEmotion === 'passionate' ? '😍' :
-                 currentThinkingEmotion === 'intimate' ? '🥰' :
-                 currentThinkingEmotion === 'vulnerable' ? '🥺' :
-                 currentThinkingEmotion === 'teasing' ? '😈' :
-                 currentThinkingEmotion === 'sad' ? '😔' :
-                 currentThinkingEmotion === 'playful' ? '😜' : '💭'}
-              </span>
-              <span style={{...styles.thinkingText, marginLeft: '8px'}}>
-                {currentThinkingEmotion === 'shy' ? 'Bonnie is hesitating...' :
-                 currentThinkingEmotion === 'flirty' ? 'Bonnie is smirking...' :
-                 currentThinkingEmotion === 'passionate' ? 'Bonnie is breathing heavily...' :
-                 currentThinkingEmotion === 'intimate' ? 'Bonnie is getting closer...' :
-                 currentThinkingEmotion === 'vulnerable' ? 'Bonnie is taking a deep breath...' :
-                 currentThinkingEmotion === 'teasing' ? 'Bonnie is plotting something...' :
-                 currentThinkingEmotion === 'sad' ? 'Bonnie is processing...' :
-                 currentThinkingEmotion === 'playful' ? 'Bonnie is giggling...' : 'Bonnie is thinking...'}
-              </span>
-            </div>
-          </div>
-        )}
-        
-        {typing && (
-          <div style={styles.messageWrapper}>
-            <div style={styles.typingIndicator}>
-              <span style={styles.typingDot} className="typing-dot"></span>
-              <span style={styles.typingDot} className="typing-dot"></span>
-              <span style={styles.typingDot} className="typing-dot"></span>
-            </div>
-          </div>
-        )}
+        {thinking && renderThinkingIndicator()}
+        {typing && renderTypingIndicator()}
         
         <div ref={messagesEndRef} />
       </main>
-
-      {/* Input */}
+      
       <footer style={styles.inputContainer}>
-        <div style={styles.inputWrapper}>
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-            onFocus={() => setInputFocused(true)}
-            onBlur={() => setInputFocused(false)}
-            placeholder="Type your message..."
-            disabled={isLoading || busy}
-            style={{
-              ...styles.input,
-              ...(inputFocused ? styles.inputFocus : {}),
-            }}
-          />
-        </div>
+        <textarea
+          ref={inputRef}
+          style={{
+            ...styles.input,
+            ...(inputFocused ? styles.inputFocused : {})
+          }}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyPress}
+          onFocus={() => setInputFocused(true)}
+          onBlur={() => setInputFocused(false)}
+          placeholder="Message Bonnie..."
+          disabled={busy || isLoading}
+          rows={1}
+        />
         <button
           onClick={handleSend}
-          disabled={isLoading || busy || !input.trim()}
-          onMouseEnter={() => setButtonHovered(true)}
-          onMouseLeave={() => setButtonHovered(false)}
+          disabled={busy || !input.trim() || isLoading}
           style={{
             ...styles.sendButton,
-            ...(buttonHovered && !isLoading && !busy && input.trim() ? styles.sendButtonHover : {}),
-            ...(isLoading || busy || !input.trim() ? styles.sendButtonDisabled : {}),
+            ...(busy || !input.trim() || isLoading ? styles.sendButtonDisabled : {}),
+            ...(currentSentiment ? styles.emotionalGlow(currentSentiment.primary) : {})
           }}
         >
           {isLoading || busy ? '⏳' : '💌'}
