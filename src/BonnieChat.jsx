@@ -631,16 +631,55 @@ export default function BonnieChat() {
   }, []);
 
   const addMessage = useCallback((text, sender, personality = null, sentiment = null) => {
+    const cleanText = text.trim().replace(/<EOM.*?>/g, ''); // Remove all EOM tags from displayed text
+    
+    // Determine animation style based on emotion
+    const getAnimationStyle = (emotion, intensity) => {
+      if (!emotion || emotion === 'neutral') return 'slideIn';
+      
+      const emotionalAnimations = {
+        'shy': 'slideInSlow',
+        'vulnerable': 'slideInSlow', 
+        'sad': 'slideInSlow',
+        'intimate': 'slideInIntimate',
+        'gentle': 'slideIn',
+        'flirty': 'slideInFast',
+        'playful': 'slideInFast',
+        'teasing': 'slideInFast',
+        'passionate': 'slideInFast',
+        'dominant': 'slideInFast'
+      };
+      
+      let animation = emotionalAnimations[emotion] || 'slideIn';
+      
+      // High intensity emotions get more dramatic animations
+      if (intensity >= CONSTANTS.EMOTIONAL_INTENSITIES.HIGH && 
+          ['passionate', 'dominant', 'flirty'].includes(emotion)) {
+        animation = 'slideInFast';
+      }
+      
+      return animation;
+    };
+    
     const newMessage = {
       id: Date.now() + Math.random(),
       sender,
-      text: text.trim().replace(/<EOM>/g, ''), // Remove <EOM> tags from displayed text
+      text: cleanText,
       timestamp: Date.now(),
       personality,
-      sentiment
+      sentiment,
+      animationStyle: sender === 'bonnie' ? 
+        getAnimationStyle(sentiment?.primary, sentiment?.intensity) : 
+        'slideIn'
     };
+    
     setMessages(prevMessages => [...prevMessages.slice(-CONSTANTS.MAX_MESSAGES + 1), newMessage]);
-    godLog("✅ Message Added", newMessage);
+    godLog("✅ Message Added with Animation", {
+      text: cleanText.substring(0, 50) + '...',
+      emotion: sentiment?.primary,
+      intensity: sentiment?.intensity,
+      animation: newMessage.animationStyle
+    });
   }, []);
 
   // Advanced EOM parser with enhanced emotional intelligence
@@ -712,7 +751,31 @@ export default function BonnieChat() {
     return parts.filter(part => part.text || part.isEOM);
   }, []);
 
-  // Dynamic typing speed calculation based on emotional context
+  // Advanced intensity-based typing speed calculation
+  const getIntensityMultiplier = useCallback((intensity, emotion) => {
+    // Base intensity multipliers
+    const intensityMultipliers = {
+      [CONSTANTS.EMOTIONAL_INTENSITIES.LOW]: 1.3,     // Slower for low-intensity
+      [CONSTANTS.EMOTIONAL_INTENSITIES.MEDIUM]: 1.0,  // Normal pace
+      [CONSTANTS.EMOTIONAL_INTENSITIES.HIGH]: 0.7,    // Faster for intense emotions
+      [CONSTANTS.EMOTIONAL_INTENSITIES.EXTREME]: 0.4  // Very fast for extreme emotions
+    };
+    
+    let multiplier = intensityMultipliers[intensity] || 1.0;
+    
+    // Emotion-specific intensity adjustments
+    if (emotion === 'shy' || emotion === 'vulnerable') {
+      // These emotions get slower with higher intensity (more overwhelmed)
+      multiplier = intensity >= CONSTANTS.EMOTIONAL_INTENSITIES.HIGH ? 1.8 : multiplier;
+    } else if (emotion === 'passionate' || emotion === 'dominant') {
+      // These emotions get much faster with higher intensity
+      multiplier = intensity >= CONSTANTS.EMOTIONAL_INTENSITIES.HIGH ? 0.3 : multiplier;
+    }
+    
+    return multiplier;
+  }, []);
+
+  // Dynamic typing speed calculation with emotional intelligence
   const calculateTypingSpeed = useCallback((text, emotion, speed, userSentiment, emotionalState) => {
     // Base speed from constants
     const baseSpeed = CONSTANTS.TYPING_SPEEDS[speed] || CONSTANTS.TYPING_SPEEDS.normal;
@@ -720,30 +783,48 @@ export default function BonnieChat() {
     // Emotional speed modifier
     const emotionalModifier = CONSTANTS.TYPING_SPEEDS.emotional[emotion] || 1.0;
     
+    // Intensity-based adjustment
+    const intensityModifier = getIntensityMultiplier(userSentiment.intensity, emotion);
+    
     // User sentiment influence (mirror their energy)
     const sentimentModifier = CONSTANTS.TYPING_SPEEDS.emotional[userSentiment.primary] || 1.0;
     
     // Emotional drift influence (more stable = faster, more chaotic = slower)
-    const stabilityModifier = 0.8 + (emotionalState.stabilityScore * 0.4);
+    const stabilityModifier = 0.7 + (emotionalState.stabilityScore * 0.6);
     
-    // Text length influence (longer messages get slightly faster)
-    const lengthModifier = text.length > 50 ? 0.9 : 1.0;
+    // Text length influence (longer messages get slightly faster to maintain flow)
+    const lengthModifier = text.length > 80 ? 0.8 : text.length > 50 ? 0.9 : 1.0;
     
-    // Calculate final speed
-    const finalSpeed = baseSpeed * emotionalModifier * sentimentModifier * stabilityModifier * lengthModifier;
+    // Context complexity modifier (emotional words = slower typing)
+    const emotionalWords = ['love', 'heart', 'feel', 'miss', 'need', 'want', 'hurt', 'scared'];
+    const emotionalWordCount = emotionalWords.filter(word => text.toLowerCase().includes(word)).length;
+    const complexityModifier = 1 + (emotionalWordCount * 0.2);
     
-    godLog("⚡ Typing Speed Calculation", {
+    // Calculate final speed with all modifiers
+    const finalSpeed = baseSpeed * 
+                      emotionalModifier * 
+                      intensityModifier * 
+                      sentimentModifier * 
+                      stabilityModifier * 
+                      lengthModifier * 
+                      complexityModifier;
+    
+    godLog("⚡ Advanced Typing Speed Calculation", {
       baseSpeed,
       emotion,
+      intensity: userSentiment.intensity,
       emotionalModifier,
+      intensityModifier,
       sentimentModifier,
       stabilityModifier,
       lengthModifier,
+      complexityModifier,
+      emotionalWordCount,
       finalSpeed: Math.round(finalSpeed)
     });
     
-    return Math.max(Math.round(finalSpeed), 15); // Minimum 15ms per character
-  }, []);
+    return Math.max(Math.round(finalSpeed), 12); // Minimum 12ms per character
+  }, [getIntensityMultiplier]);
 
   const simulateBonnieTyping = useCallback((reply, personality, sentiment) => {
     setTyping(false);
@@ -802,35 +883,49 @@ export default function BonnieChat() {
         
         currentEmotion = part.emotion;
         
-        // Show thinking/breathing indicator during emotional pause
-        setTimeout(() => {
-          setTyping(false);
-          setThinking(true);
-          setCurrentThinkingEmotion(part.emotion);
-          
-          const thinkingActions = {
-            'shy': 'hesitating',
-            'vulnerable': 'taking a deep breath',
-            'sad': 'processing emotions',
-            'intimate': 'getting closer',
-            'passionate': 'breathing heavily',
-            'gentle': 'choosing words carefully',
-            'teasing': 'plotting something',
-            'flirty': 'smirking',
-            'playful': 'giggling',
-            'dominant': 'considering',
-            'submissive': 'waiting for guidance'
-          };
-          
-          godLog(`💭 Bonnie is ${thinkingActions[part.emotion] || 'thinking'}...`, { 
-            emotion: part.emotion, 
-            pause: emotionalPause,
-            originalPause: part.pause,
-            multiplier: finalMultiplier,
-            userDrift: emotionalState.drift,
-            userIntensity: sentiment.intensity
-          });
-        }, totalDelay);
+                 // Show thinking/breathing indicator with sophisticated emotional timing
+         setTimeout(() => {
+           setTyping(false);
+           setThinking(true);
+           setCurrentThinkingEmotion(part.emotion);
+           
+           const thinkingActions = {
+             'shy': 'hesitating nervously',
+             'vulnerable': 'taking a shaky breath',
+             'sad': 'processing deep emotions',
+             'intimate': 'moving closer to you',
+             'passionate': 'breathing heavily with desire',
+             'gentle': 'choosing her words with care',
+             'teasing': 'plotting something mischievous',
+             'flirty': 'smirking playfully',
+             'playful': 'giggling to herself',
+             'dominant': 'considering her next move',
+             'submissive': 'waiting for your guidance'
+           };
+           
+           // Intensity affects thinking description
+           const intensityAdjectives = {
+             [CONSTANTS.EMOTIONAL_INTENSITIES.LOW]: '',
+             [CONSTANTS.EMOTIONAL_INTENSITIES.MEDIUM]: 'thoughtfully',
+             [CONSTANTS.EMOTIONAL_INTENSITIES.HIGH]: 'intensely',
+             [CONSTANTS.EMOTIONAL_INTENSITIES.EXTREME]: 'overwhelmingly'
+           };
+           
+           const intensityAdj = intensityAdjectives[sentiment.intensity] || '';
+           const thinkingText = intensityAdj ? 
+             `${intensityAdj} ${thinkingActions[part.emotion] || 'thinking'}` : 
+             (thinkingActions[part.emotion] || 'thinking');
+           
+           godLog(`💭 Bonnie is ${thinkingText}...`, { 
+             emotion: part.emotion, 
+             intensity: sentiment.intensity,
+             pause: emotionalPause,
+             originalPause: basePause,
+             multiplier: finalMultiplier,
+             userDrift: emotionalState.drift,
+             stabilityScore: emotionalState.stabilityScore
+           });
+         }, totalDelay);
         
         totalDelay += emotionalPause;
         return;
