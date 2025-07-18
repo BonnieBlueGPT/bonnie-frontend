@@ -310,6 +310,7 @@ export default function BonnieChat() {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [typing, setTyping] = useState(false);
+  const [thinking, setThinking] = useState(false);
   const [currentPersonality, setCurrentPersonality] = useState(CONSTANTS.PERSONALITY_LAYERS.PLAYFUL);
   const [currentSentiment, setCurrentSentiment] = useState({ primary: 'neutral', intensity: 0 });
   const [online, setOnline] = useState(true);
@@ -347,7 +348,7 @@ export default function BonnieChat() {
     const newMessage = {
       id: Date.now() + Math.random(),
       sender,
-      text: text.trim(),
+      text: text.trim().replace(/<EOM>/g, ''), // Remove <EOM> tags from displayed text
       timestamp: Date.now(),
       personality,
       sentiment
@@ -357,12 +358,65 @@ export default function BonnieChat() {
   }, []);
 
   const simulateBonnieTyping = useCallback((reply, personality, sentiment) => {
-    setTyping(true);
-    const typingDuration = Math.min(reply.length * 30, 3000); // Dynamic typing duration
-    setTimeout(() => {
-      addMessage(reply, 'bonnie', personality, sentiment);
-      setTyping(false);
-    }, typingDuration);
+    setTyping(false);
+    setThinking(false);
+    
+    // Split the message into parts at each <EOM> tag
+    const parts = reply.split('<EOM>').filter(part => part.trim());
+    
+    if (parts.length === 0) {
+      return;
+    }
+    
+    let totalDelay = 0;
+    
+    // Process each part with appropriate delays
+    parts.forEach((part, index) => {
+      const cleanPart = part.trim();
+      if (!cleanPart) return;
+      
+      // Calculate typing duration for this part
+      const partTypingDuration = Math.min(cleanPart.length * 30, 3000);
+      
+      // Add pause between parts (except for the first part)
+      const pauseDuration = index > 0 ? Math.min(1500 + (cleanPart.length * 10), 4000) : 0;
+      
+      // Show thinking indicator during pause
+      if (pauseDuration > 0) {
+        setTimeout(() => {
+          setTyping(false);
+          setThinking(true);
+          godLog("💭 Bonnie is thinking...", { part: cleanPart, pauseDuration });
+        }, totalDelay);
+        
+        totalDelay += pauseDuration;
+      }
+      
+      // Show typing indicator before message
+      setTimeout(() => {
+        setThinking(false);
+        setTyping(true);
+      }, totalDelay);
+      
+      // Add the message part after typing duration
+      setTimeout(() => {
+        addMessage(cleanPart, 'bonnie', personality, sentiment);
+        
+        // Clear indicators if this is the last part
+        if (index === parts.length - 1) {
+          setTyping(false);
+          setThinking(false);
+        }
+      }, totalDelay + partTypingDuration);
+      
+      totalDelay += partTypingDuration;
+    });
+    
+    godLog("🎭 Enhanced EOM Processing", { 
+      originalMessage: reply, 
+      parts: parts.length, 
+      totalDuration: totalDelay 
+    });
   }, [addMessage]);
 
   const handleSend = useCallback(async () => {
@@ -422,6 +476,15 @@ export default function BonnieChat() {
             </div>
           </div>
         ))}
+        
+        {thinking && (
+          <div style={styles.messageWrapper}>
+            <div style={styles.thinkingIndicator}>
+              <span style={styles.thinkingDot} className="thinking-dot">💭</span>
+              <span style={{...styles.thinkingText, marginLeft: '8px'}}>Bonnie is thinking...</span>
+            </div>
+          </div>
+        )}
         
         {typing && (
           <div style={styles.messageWrapper}>
