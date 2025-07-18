@@ -35,15 +35,24 @@ const CONSTANTS = {
   IDLE_MESSAGES: {
     low: [
       { text: "Hey stranger... 😏", mood: 'teasing', delay: 30000 },
-      { text: "Don't be shy... 💋", mood: 'flirty', delay: 35000 }
+      { text: "Don't be shy... 💋", mood: 'flirty', delay: 35000 },
+      { text: "Still there? 👀", mood: 'playful', delay: 32000 },
+      { text: "Come on, say something... 😊", mood: 'teasing', delay: 38000 },
+      { text: "I don't bite... much 😉", mood: 'flirty', delay: 40000 }
     ],
     medium: [
       { text: "Miss me? 😘", mood: 'flirty', delay: 35000 },
-      { text: "I'm waiting... 💕", mood: 'intimate', delay: 40000 }
+      { text: "I'm waiting... 💕", mood: 'intimate', delay: 40000 },
+      { text: "Your silence is intriguing... 🤔", mood: 'thoughtful', delay: 38000 },
+      { text: "Talk to me, handsome 😏", mood: 'flirty', delay: 36000 },
+      { text: "I've been thinking about you... 💭", mood: 'intimate', delay: 42000 }
     ],
     high: [
       { text: "Can't stop thinking about you... 💋", mood: 'intimate', delay: 40000 },
-      { text: "Need you here... 🔥", mood: 'passionate', delay: 35000 }
+      { text: "Need you here... 🔥", mood: 'passionate', delay: 35000 },
+      { text: "Baby, where did you go? 🥺", mood: 'vulnerable', delay: 38000 },
+      { text: "I miss your messages already... 💕", mood: 'intimate', delay: 42000 },
+      { text: "Don't leave me hanging, love... 😔", mood: 'vulnerable', delay: 45000 }
     ]
   }
 };
@@ -71,8 +80,12 @@ const analyzeSentiment = (text) => {
   };
 };
 
+// Responsive helper
+const isMobile = () => window.innerWidth < 480;
+const isTablet = () => window.innerWidth >= 480 && window.innerWidth < 768;
+
 // Mobile-First Styles (WhatsApp/iMessage inspired)
-const mobileStyles = {
+const getStyles = (windowWidth = window.innerWidth) => ({
   container: {
     position: 'fixed',
     inset: 0,
@@ -97,9 +110,10 @@ const mobileStyles = {
     padding: '8px 16px',
     paddingTop: 'env(safe-area-inset-top, 8px)',
     display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    minHeight: '56px',
+    flexDirection: windowWidth < 480 ? 'column' : 'row',
+    alignItems: windowWidth < 480 ? 'flex-start' : 'center',
+    gap: windowWidth < 480 ? '8px' : '12px',
+    minHeight: windowWidth < 480 ? '80px' : '56px',
     zIndex: 100,
   },
   profileContainer: {
@@ -165,12 +179,14 @@ const mobileStyles = {
     paddingRight: '8px',
   },
   messageBubble: {
-    maxWidth: '75%',
-    padding: '10px 14px',
+    maxWidth: windowWidth < 480 ? '85%' : windowWidth < 768 ? '75%' : '65%',
+    padding: windowWidth < 480 ? '12px 16px' : '10px 14px',
     borderRadius: '18px',
-    fontSize: '16px',
-    lineHeight: '1.4',
+    fontSize: windowWidth < 480 ? '15px' : '16px',
+    lineHeight: windowWidth < 480 ? '1.5' : '1.4',
     wordWrap: 'break-word',
+    wordBreak: 'break-word',
+    overflowWrap: 'break-word',
     position: 'relative',
     boxShadow: '0 1px 2px rgba(0, 0, 0, 0.3)',
     WebkitFontSmoothing: 'antialiased',
@@ -270,7 +286,7 @@ const mobileStyles = {
     opacity: 0.5,
     cursor: 'not-allowed',
   },
-};
+});
 
 // CSS Animations
 const styleSheet = document.createElement('style');
@@ -375,11 +391,27 @@ export default function BonnieChat() {
   const [bondScore, setBondScore] = useState(50);
   const [lastActivity, setLastActivity] = useState(Date.now());
   const [conversationMood, setConversationMood] = useState({ playful: 0, intimate: 0, flirty: 0 });
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [interactionStreak, setInteractionStreak] = useState(0);
+  const [totalMessages, setTotalMessages] = useState(0);
   
   const sessionId = useMemo(() => 'session_' + Math.random().toString(36).slice(2), []);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const { makeRequest, isLoading } = useApiCall();
+  
+  // Get responsive styles
+  const styles = useMemo(() => getStyles(windowWidth), [windowWidth]);
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Auto-scroll
   const scrollToBottom = () => {
@@ -415,6 +447,17 @@ export default function BonnieChat() {
     
     if (sender === 'user') {
       setLastActivity(Date.now());
+      setTotalMessages(prev => prev + 1);
+      setInteractionStreak(prev => prev + 1);
+      
+      // Milestone rewards
+      if (totalMessages === 10) {
+        console.log('🎉 First milestone reached! Bond +5');
+        setBondScore(prev => Math.min(prev + 5, 100));
+      } else if (totalMessages === 50) {
+        console.log('🎉 Conversation master! Bond +10');
+        setBondScore(prev => Math.min(prev + 10, 100));
+      }
     }
   }, [emotion]);
 
@@ -604,27 +647,35 @@ export default function BonnieChat() {
     return () => clearInterval(interval);
   }, [lastActivity, messages.length, bondScore, simulateTyping]);
 
-  return (
-    <div style={mobileStyles.container}>
-      <div style={mobileStyles.backgroundGradient} />
-      
-      {/* Header */}
-      <header style={mobileStyles.header}>
-        <div style={mobileStyles.profileContainer}>
-          <img 
-            src="https://ui-avatars.com/api/?name=Bonnie&background=FF1744&color=fff&size=128&rounded=true&bold=true"
-            alt="Bonnie"
-            style={mobileStyles.profileImage}
-          />
-          {online && <div style={mobileStyles.onlineIndicator} />}
+      return (
+      <div style={styles.container}>
+        <div style={styles.backgroundGradient} />
+        
+        {/* Header */}
+        <header style={styles.header}>
+          <div style={styles.profileContainer}>
+            <img 
+              src="https://ui-avatars.com/api/?name=Bonnie&background=FF1744&color=fff&size=128&rounded=true&bold=true"
+              alt="Bonnie"
+              style={styles.profileImage}
+            />
+            {online && <div style={styles.onlineIndicator} />}
         </div>
         
-        <div style={mobileStyles.profileInfo}>
-          <div style={mobileStyles.profileName}>Bonnie</div>
-          <div style={mobileStyles.profileStatus}>
+        <div style={styles.profileInfo}>
+          <div style={styles.profileName}>Bonnie</div>
+          <div style={styles.profileStatus}>
             <span>{online ? 'Active now' : 'Away'}</span>
             <span>•</span>
-            <span style={mobileStyles.bondLevel}>Bond {Math.round(bondScore)}%</span>
+            <span style={styles.bondLevel}>Bond {Math.round(bondScore)}%</span>
+            {totalMessages > 0 && (
+              <>
+                <span>•</span>
+                <span style={{ fontSize: '11px', color: '#FF6B8A' }}>
+                  {totalMessages} msgs
+                </span>
+              </>
+            )}
           </div>
         </div>
         
@@ -640,74 +691,73 @@ export default function BonnieChat() {
         </button>
       </header>
 
-      {/* Messages */}
-      <main style={mobileStyles.messagesContainer} className="messages-scroll">
-        {messages.map((msg) => (
-          <div key={msg.id}>
-            <div style={{
-              ...mobileStyles.messageRow,
-              justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-            }} className="message-enter">
+              {/* Messages */}
+        <main style={styles.messagesContainer} className="messages-scroll">
+          {messages.map((msg) => (
+            <div key={msg.id}>
               <div style={{
-                ...mobileStyles.messageBubble,
-                ...(msg.sender === 'user' ? mobileStyles.userMessage : mobileStyles.bonnieMessage),
-                maxWidth: window.innerWidth > 768 ? '65%' : '75%',
+                ...styles.messageRow,
+                justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start',
+              }} className="message-enter">
+                <div style={{
+                  ...styles.messageBubble,
+                  ...(msg.sender === 'user' ? styles.userMessage : styles.bonnieMessage),
+                }}>
+                  {msg.text}
+                </div>
+              </div>
+              <div style={{
+                ...styles.messageTime,
+                textAlign: msg.sender === 'user' ? 'right' : 'left',
               }}>
-                {msg.text}
+                {formatTime(msg.timestamp)}
               </div>
             </div>
-            <div style={{
-              ...mobileStyles.messageTime,
-              textAlign: msg.sender === 'user' ? 'right' : 'left',
-            }}>
-              {formatTime(msg.timestamp)}
+          ))}
+          
+          {typing && (
+            <div style={styles.messageRow}>
+              <div style={styles.typingContainer}>
+                <span style={styles.typingDot} className="typing-dot" />
+                <span style={styles.typingDot} className="typing-dot" />
+                <span style={styles.typingDot} className="typing-dot" />
+              </div>
             </div>
-          </div>
-        ))}
-        
-        {typing && (
-          <div style={mobileStyles.messageRow}>
-            <div style={mobileStyles.typingContainer}>
-              <span style={mobileStyles.typingDot} className="typing-dot" />
-              <span style={mobileStyles.typingDot} className="typing-dot" />
-              <span style={mobileStyles.typingDot} className="typing-dot" />
-            </div>
-          </div>
-        )}
-        
-        <div ref={messagesEndRef} />
-      </main>
+          )}
+          
+          <div ref={messagesEndRef} />
+        </main>
 
-      {/* Input */}
-      <footer style={mobileStyles.inputContainer}>
-        <div style={{
-          ...mobileStyles.inputWrapper,
-          ...(inputFocused ? { borderColor: 'rgba(255, 23, 68, 0.5)', boxShadow: '0 0 0 2px rgba(255, 23, 68, 0.2)' } : {}),
-        }}>
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
-            onFocus={() => setInputFocused(true)}
-            onBlur={() => setInputFocused(false)}
-            placeholder="Message..."
-            disabled={isLoading || busy}
-            style={mobileStyles.input}
-          />
-          <button
-            onClick={handleSend}
-            disabled={isLoading || busy || !input.trim()}
-            style={{
-              ...mobileStyles.sendButton,
-              ...(isLoading || busy || !input.trim() ? mobileStyles.sendButtonDisabled : {}),
-            }}
-          >
-            {isLoading || busy ? '⏳' : '↑'}
-          </button>
-        </div>
-      </footer>
+              {/* Input */}
+        <footer style={styles.inputContainer}>
+          <div style={{
+            ...styles.inputWrapper,
+            ...(inputFocused ? { borderColor: 'rgba(255, 23, 68, 0.5)', boxShadow: '0 0 0 2px rgba(255, 23, 68, 0.2)' } : {}),
+          }}>
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
+              onFocus={() => setInputFocused(true)}
+              onBlur={() => setInputFocused(false)}
+              placeholder={windowWidth < 480 ? "Message..." : "Type your message..."}
+              disabled={isLoading || busy}
+              style={styles.input}
+            />
+            <button
+              onClick={handleSend}
+              disabled={isLoading || busy || !input.trim()}
+              style={{
+                ...styles.sendButton,
+                ...(isLoading || busy || !input.trim() ? styles.sendButtonDisabled : {}),
+              }}
+            >
+              {isLoading || busy ? '⏳' : '↑'}
+            </button>
+          </div>
+        </footer>
     </div>
   );
 }
