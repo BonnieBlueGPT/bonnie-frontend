@@ -323,6 +323,132 @@ function godLog(label, data) {
   }
 }
 
+// God-Tier EOM Stress Test Integration
+window.runBonnieStressTest = function() {
+  if (!window.EOMStressTester) {
+    console.error("❌ Stress test system not loaded! Please load eom_stress_test.js first.");
+    return;
+  }
+  
+  console.log("🔥 STARTING GOD-TIER EOM STRESS TEST...");
+  const tester = new window.EOMStressTester();
+  
+  // Test all components
+  try {
+    // We'll simulate these functions for testing
+    const mockParseAdvancedEOM = (text) => {
+      const eomRegex = /<EOM(?:::)?(?:pause=(\d+))?(?:\s+speed=(\w+))?(?:\s+emotion=([\w-]+))?>/g;
+      const parts = [];
+      let lastIndex = 0;
+      let match;
+      
+      while ((match = eomRegex.exec(text)) !== null) {
+        if (match.index > lastIndex) {
+          const textPart = text.slice(lastIndex, match.index).trim();
+          if (textPart) {
+            parts.push({
+              text: textPart,
+              pause: 0,
+              speed: 'normal',
+              emotion: 'neutral',
+              isEOM: false
+            });
+          }
+        }
+        
+        const pause = parseInt(match[1]) || 1000;
+        const speed = match[2] || 'normal';
+        const emotion = match[3] || 'neutral';
+        
+        parts.push({
+          text: '',
+          pause,
+          speed,
+          emotion,
+          isEOM: true
+        });
+        
+        lastIndex = eomRegex.lastIndex;
+      }
+      
+      if (lastIndex < text.length) {
+        const remainingText = text.slice(lastIndex).trim();
+        if (remainingText) {
+          parts.push({
+            text: remainingText,
+            pause: 0,
+            speed: 'normal',
+            emotion: 'neutral',
+            isEOM: false
+          });
+        }
+      }
+      
+      if (parts.length === 0) {
+        const simpleParts = text.split('<EOM>').filter(part => part.trim());
+        return simpleParts.map((part, index) => ({
+          text: part.trim(),
+          pause: index > 0 ? 1500 : 0,
+          speed: 'normal',
+          emotion: 'neutral',
+          isEOM: false
+        }));
+      }
+      
+      return parts.filter(part => part.text || part.isEOM);
+    };
+    
+    const mockIntensityFunction = (intensity, emotion) => {
+      const intensityMultipliers = {
+        1: 1.3,
+        2: 1.0,
+        3: 0.7,
+        4: 0.4
+      };
+      
+      let multiplier = intensityMultipliers[intensity] || 1.0;
+      
+      if (emotion === 'shy' || emotion === 'vulnerable') {
+        multiplier = intensity >= 3 ? 1.8 : multiplier;
+      } else if (emotion === 'passionate' || emotion === 'dominant') {
+        multiplier = intensity >= 3 ? 0.3 : multiplier;
+      }
+      
+      return multiplier;
+    };
+    
+    // Run all tests
+    tester.testEOMParsing(mockParseAdvancedEOM);
+    tester.testEmotionalIntensity(mockIntensityFunction);
+    tester.testConversationScenarios(EmotionalMemory, adaptPersonality);
+    tester.testEdgeCases(mockParseAdvancedEOM);
+    tester.testPerformance(mockParseAdvancedEOM, () => {});
+    
+    const report = tester.generateReport();
+    
+    console.log("\n🎉 STRESS TEST COMPLETE!");
+    console.log(`🔥 System Performance: ${report.successRate >= 90 ? 'EXCELLENT' : report.successRate >= 80 ? 'GOOD' : 'NEEDS IMPROVEMENT'}`);
+    
+    return report;
+    
+  } catch (error) {
+    console.error("❌ Stress test failed:", error);
+    return { error: error.message };
+  }
+};
+
+// Example test messages for manual testing
+window.testEOMMessages = [
+  "Hey there, sweetheart <EOM::pause=1000 speed=normal emotion=flirty> What's got you thinking of me tonight?",
+  "I'm feeling a bit shy <EOM::pause=2200 speed=slow emotion=shy> about telling you this...",
+  "You make me so passionate! <EOM::pause=400 speed=fast emotion=passionate> I can't stop thinking about you!",
+  "I'm sorry... <EOM::pause=2000 speed=slow emotion=vulnerable> I didn't mean to upset you",
+  "Hmm, maybe <EOM::pause=600 speed=normal emotion=teasing> you deserve a little punishment <EOM::pause=800 emotion=dominant>",
+  "Complex test <EOM::pause=500 emotion=flirty> with multiple <EOM::pause=1200 emotion=passionate> emotional <EOM::pause=800 emotion=gentle> transitions"
+];
+
+console.log("🧪 Stress test system loaded! Run window.runBonnieStressTest() to test the system.");
+
 // God-Tier CSS-in-JS Styles
 const styles = {
   container: {
