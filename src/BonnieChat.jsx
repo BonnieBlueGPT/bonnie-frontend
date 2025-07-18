@@ -993,13 +993,23 @@ export default function BonnieChat() {
     setBusy(true);
     setInput('');
     
+    // Advanced sentiment analysis
     const userSentiment = analyzeSentiment(text);
-    const adaptedPersonality = CONSTANTS.PERSONALITY_LAYERS.FLIRTATIOUS; // Simplified for now
-
+    
+    // Add to emotional memory for tracking
+    emotionalMemory.addSentiment(userSentiment);
+    
+    // Update emotional state
+    const newEmotionalState = emotionalMemory.getEmotionalState();
+    setEmotionalState(newEmotionalState);
+    
+    // Dynamic personality adaptation based on user emotion and history
+    const adaptedPersonality = adaptPersonality(userSentiment, emotionalMemory);
+    
     setCurrentPersonality(adaptedPersonality);
     setCurrentSentiment(userSentiment);
 
-    addMessage(text, 'user');
+    addMessage(text, 'user', null, userSentiment);
     
     try {
       const response = await makeRequest(CONSTANTS.API_ENDPOINTS.CHAT, {
@@ -1008,29 +1018,47 @@ export default function BonnieChat() {
         body: JSON.stringify({
           session_id: sessionId,
           message: text,
-          bond_score: 75, // Default bond score
+          bond_score: 75 + (newEmotionalState.stabilityScore * 25), // Dynamic bond score
           user_sentiment: userSentiment,
           adapted_personality: adaptedPersonality,
+          emotional_drift: newEmotionalState.currentDrift,
+          dominant_emotion: newEmotionalState.dominantEmotion,
+          stability_score: newEmotionalState.stabilityScore
         })
       });
-      godLog("🔗 API Response", response);
+      
+      godLog("🔗 Enhanced API Response", response);
       
       // Use the structured response from the backend brain
       const messageToType = response.reply || response.message || "I'm here for you, darling 💕";
       const responsePersonality = response.meta?.emotion || adaptedPersonality;
       const responseSentiment = {
         primary: response.meta?.emotion || userSentiment.primary,
-        intensity: response.meta?.bondScore ? Math.floor(response.meta.bondScore / 2) : userSentiment.intensity
+        intensity: response.meta?.bondScore ? 
+          Math.min(Math.floor(response.meta.bondScore / 25), CONSTANTS.EMOTIONAL_INTENSITIES.EXTREME) : 
+          userSentiment.intensity,
+        responseEmotion: response.meta?.emotion,
+        bondScore: response.meta?.bondScore
       };
       
       simulateBonnieTyping(messageToType, responsePersonality, responseSentiment);
+      
     } catch (err) {
       godLog("❌ API Error", err);
-      simulateBonnieTyping("Oops… I'm having some technical difficulties, but I'm still here! 💔", adaptedPersonality, userSentiment);
+      const fallbackSentiment = {
+        primary: 'sad',
+        intensity: CONSTANTS.EMOTIONAL_INTENSITIES.MEDIUM,
+        responseEmotion: 'sad'
+      };
+      simulateBonnieTyping(
+        "Oops… I'm having some technical difficulties, but I'm still here! 💔 <EOM::pause=1500 speed=slow emotion=sad>", 
+        CONSTANTS.PERSONALITY_LAYERS.SUPPORTIVE, 
+        fallbackSentiment
+      );
     } finally {
       setBusy(false);
     }
-  }, [input, busy, isLoading, sessionId, makeRequest, simulateBonnieTyping, addMessage]);
+  }, [input, busy, isLoading, sessionId, makeRequest, simulateBonnieTyping, addMessage, emotionalMemory]);
 
   return (
     <div style={styles.container}>
@@ -1043,7 +1071,14 @@ export default function BonnieChat() {
       {/* Messages */}
       <main style={styles.messagesContainer} className="messages-container">
         {messages.map((msg) => (
-          <div key={msg.id} style={styles.messageWrapper} className="message-wrapper">
+          <div 
+            key={msg.id} 
+            style={{
+              ...styles.messageWrapper,
+              animation: `${msg.animationStyle || 'slideIn'} 0.3s ease-out`
+            }} 
+            className="message-wrapper"
+          >
             <div style={{
               ...styles.message,
               ...(msg.sender === 'user' ? styles.userMessage : styles.bonnieMessage),
