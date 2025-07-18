@@ -102,45 +102,197 @@ const generateSessionId = () => {
   return 'session_' + Math.random().toString(36).slice(2);
 };
 
-// God-Tier Sentiment Analysis System
+// Advanced Emotional Intelligence & Sentiment Analysis System
 const analyzeSentiment = (text) => {
   const lowerText = text.toLowerCase();
-  // Flirty indicators, Intimate, Sad/vulnerable, Playful, and Teasing words
-  const flirtyWords = ['sexy', 'hot', 'beautiful', 'gorgeous', 'cute', 'kiss', 'love', 'baby', 'darling', 'honey'];
-  const flirtyScore = flirtyWords.filter(word => lowerText.includes(word)).length;
   
-  const intimateWords = ['miss', 'need', 'want', 'desire', 'close', 'together', 'feel', 'heart'];
-  const intimateScore = intimateWords.filter(word => lowerText.includes(word)).length;
-  
-  const sadWords = ['sad', 'hurt', 'lonely', 'upset', 'tired', 'stressed', 'difficult', 'hard'];
-  const sadScore = sadWords.filter(word => lowerText.includes(word)).length;
-  
-  const playfulWords = ['haha', 'lol', 'funny', 'joke', 'silly', 'crazy', 'fun', 'play'];
-  const playfulScore = playfulWords.filter(word => lowerText.includes(word)).length;
-  
-  const teasingWords = ['maybe', 'perhaps', 'guess', 'see', 'hmm', 'interesting', 'really'];
-  const teasingScore = teasingWords.filter(word => lowerText.includes(word)).length;
-
-  const scores = {
-    [CONSTANTS.SENTIMENT_TYPES.FLIRTY]: flirtyScore * 2,
-    [CONSTANTS.SENTIMENT_TYPES.INTIMATE]: intimateScore * 2,
-    [CONSTANTS.SENTIMENT_TYPES.SAD]: sadScore * 3,
-    [CONSTANTS.SENTIMENT_TYPES.PLAYFUL]: playfulScore,
-    [CONSTANTS.SENTIMENT_TYPES.TEASING]: teasingScore,
-    [CONSTANTS.SENTIMENT_TYPES.HAPPY]: (text.includes('!') ? 1 : 0) + playfulScore,
-    [CONSTANTS.SENTIMENT_TYPES.SERIOUS]: lowerText.length > 100 ? 1 : 0,
-    [CONSTANTS.SENTIMENT_TYPES.VULNERABLE]: sadScore * 2
+  // Enhanced emotional keyword detection
+  const emotionalKeywords = {
+    flirty: ['sexy', 'hot', 'beautiful', 'gorgeous', 'cute', 'kiss', 'love', 'baby', 'darling', 'honey', 'desire', 'want you', 'miss you'],
+    intimate: ['miss', 'need', 'want', 'desire', 'close', 'together', 'feel', 'heart', 'soul', 'deep', 'connection', 'touch'],
+    sad: ['sad', 'hurt', 'lonely', 'upset', 'tired', 'stressed', 'difficult', 'hard', 'pain', 'empty', 'broken', 'cry'],
+    vulnerable: ['scared', 'afraid', 'worry', 'nervous', 'insecure', 'doubt', 'uncertain', 'fragile', 'weak', 'lost'],
+    playful: ['haha', 'lol', 'funny', 'joke', 'silly', 'crazy', 'fun', 'play', 'game', 'laugh', 'giggle', 'tease'],
+    passionate: ['intense', 'fire', 'burn', 'wild', 'crazy about', 'obsessed', 'addicted', 'breathless', 'consume'],
+    teasing: ['maybe', 'perhaps', 'guess', 'see', 'hmm', 'interesting', 'really', 'oh really', 'sure', 'whatever'],
+    dominant: ['control', 'command', 'order', 'submit', 'obey', 'mine', 'belong', 'own', 'master', 'power'],
+    submissive: ['please', 'yes sir', 'yes ma\'am', 'sorry', 'forgive', 'serve', 'worship', 'kneel', 'beg'],
+    gentle: ['soft', 'tender', 'sweet', 'calm', 'peaceful', 'comfort', 'soothe', 'gentle', 'care', 'nurture']
   };
 
+  // Calculate scores for each emotion
+  const scores = {};
+  Object.keys(emotionalKeywords).forEach(emotion => {
+    const words = emotionalKeywords[emotion];
+    let score = 0;
+    
+    words.forEach(word => {
+      if (lowerText.includes(word)) {
+        // Multi-word phrases get higher scores
+        score += word.includes(' ') ? 3 : 1;
+      }
+    });
+    
+    scores[emotion] = score;
+  });
+
+  // Add contextual scoring
+  const exclamationCount = (text.match(/!/g) || []).length;
+  const questionCount = (text.match(/\?/g) || []).length;
+  const dotsCount = (text.match(/\.\.\./g) || []).length;
+  const capsCount = (text.match(/[A-Z]{2,}/g) || []).length;
+  
+  // Emotional intensity modifiers
+  if (exclamationCount > 0) {
+    scores.playful += exclamationCount;
+    scores.passionate += exclamationCount;
+  }
+  
+  if (dotsCount > 0) {
+    scores.vulnerable += dotsCount;
+    scores.sad += dotsCount;
+    scores.teasing += dotsCount;
+  }
+  
+  if (capsCount > 0) {
+    scores.passionate += capsCount;
+    scores.dominant += capsCount;
+  }
+  
+  if (questionCount > 0) {
+    scores.teasing += questionCount;
+    scores.vulnerable += questionCount;
+  }
+
+  // Determine primary sentiment
   const primarySentiment = Object.keys(scores).reduce((a, b) => 
     scores[a] > scores[b] ? a : b
   );
 
+  // Calculate intensity (1-4 scale)
+  const maxScore = Math.max(...Object.values(scores));
+  let intensity = CONSTANTS.EMOTIONAL_INTENSITIES.LOW;
+  
+  if (maxScore >= 5) intensity = CONSTANTS.EMOTIONAL_INTENSITIES.EXTREME;
+  else if (maxScore >= 3) intensity = CONSTANTS.EMOTIONAL_INTENSITIES.HIGH;
+  else if (maxScore >= 2) intensity = CONSTANTS.EMOTIONAL_INTENSITIES.MEDIUM;
+
   return {
     primary: primarySentiment,
-    intensity: Math.max(...Object.values(scores)),
-    scores
+    intensity,
+    scores,
+    contextual: {
+      exclamations: exclamationCount,
+      questions: questionCount,
+      ellipses: dotsCount,
+      caps: capsCount,
+      messageLength: text.length
+    }
   };
+};
+
+// Emotional Memory & Drift Tracking System
+class EmotionalMemory {
+  constructor() {
+    this.history = [];
+    this.currentDrift = 0;
+    this.dominantEmotion = 'neutral';
+  }
+
+  addSentiment(sentiment) {
+    this.history.push({
+      ...sentiment,
+      timestamp: Date.now()
+    });
+
+    // Keep only recent emotional history
+    if (this.history.length > CONSTANTS.MAX_EMOTIONAL_MEMORY) {
+      this.history.shift();
+    }
+
+    this.calculateEmotionalDrift();
+    this.updateDominantEmotion();
+  }
+
+  calculateEmotionalDrift() {
+    if (this.history.length < 3) {
+      this.currentDrift = 0;
+      return;
+    }
+
+    const recent = this.history.slice(-3);
+    const emotionChanges = recent.reduce((changes, current, index) => {
+      if (index === 0) return 0;
+      const previous = recent[index - 1];
+      return changes + (current.primary !== previous.primary ? 1 : 0);
+    }, 0);
+
+    this.currentDrift = emotionChanges / 2; // 0 to 1 scale
+  }
+
+  updateDominantEmotion() {
+    const recentEmotions = this.history.slice(-5);
+    const emotionCounts = {};
+
+    recentEmotions.forEach(sentiment => {
+      emotionCounts[sentiment.primary] = (emotionCounts[sentiment.primary] || 0) + sentiment.intensity;
+    });
+
+    this.dominantEmotion = Object.keys(emotionCounts).reduce((a, b) => 
+      emotionCounts[a] > emotionCounts[b] ? a : b
+    ) || 'neutral';
+  }
+
+  getEmotionalState() {
+    return {
+      currentDrift: this.currentDrift,
+      dominantEmotion: this.dominantEmotion,
+      recentHistory: this.history.slice(-5),
+      stabilityScore: 1 - this.currentDrift
+    };
+  }
+}
+
+// Dynamic Personality Adaptation System
+const adaptPersonality = (userSentiment, emotionalMemory) => {
+  const { primary: emotion, intensity } = userSentiment;
+  const { dominantEmotion, currentDrift } = emotionalMemory.getEmotionalState();
+  
+  // Get potential personalities for this emotion
+  const potentialPersonalities = CONSTANTS.PERSONALITY_TRIGGERS[emotion] || ['SUPPORTIVE'];
+  
+  // Factor in emotional drift and intensity
+  let selectedPersonality;
+  
+  if (currentDrift > 0.5) {
+    // High emotional volatility - be more supportive
+    selectedPersonality = CONSTANTS.PERSONALITY_LAYERS.SUPPORTIVE;
+  } else if (intensity >= CONSTANTS.EMOTIONAL_INTENSITIES.HIGH) {
+    // High intensity - match the energy
+    if (emotion === 'passionate' || emotion === 'flirty') {
+      selectedPersonality = CONSTANTS.PERSONALITY_LAYERS.PASSIONATE;
+    } else if (emotion === 'sad' || emotion === 'vulnerable') {
+      selectedPersonality = CONSTANTS.PERSONALITY_LAYERS.GENTLE;
+    } else if (emotion === 'playful' || emotion === 'teasing') {
+      selectedPersonality = CONSTANTS.PERSONALITY_LAYERS.PLAYFUL;
+    } else {
+      selectedPersonality = CONSTANTS.PERSONALITY_LAYERS[potentialPersonalities[0]];
+    }
+  } else {
+    // Default to first suggested personality
+    selectedPersonality = CONSTANTS.PERSONALITY_LAYERS[potentialPersonalities[0]];
+  }
+
+  godLog("🎭 Personality Adaptation", {
+    userEmotion: emotion,
+    intensity,
+    drift: currentDrift,
+    dominantEmotion,
+    selectedPersonality,
+    potentialOptions: potentialPersonalities
+  });
+
+  return selectedPersonality;
 };
 
 // Debugging helper function
@@ -399,11 +551,18 @@ export default function BonnieChat() {
   const [currentThinkingEmotion, setCurrentThinkingEmotion] = useState('neutral');
   const [currentPersonality, setCurrentPersonality] = useState(CONSTANTS.PERSONALITY_LAYERS.PLAYFUL);
   const [currentSentiment, setCurrentSentiment] = useState({ primary: 'neutral', intensity: 0 });
+  const [emotionalState, setEmotionalState] = useState({
+    drift: 0,
+    dominantEmotion: 'neutral',
+    stabilityScore: 1.0,
+    recentHistory: []
+  });
   const [online, setOnline] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState('connected');
   const [inputFocused, setInputFocused] = useState(false);
   const [buttonHovered, setButtonHovered] = useState(false);
   const sessionId = useMemo(() => generateSessionId(), []);
+  const emotionalMemory = useMemo(() => new EmotionalMemory(), []);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -443,30 +602,35 @@ export default function BonnieChat() {
     godLog("✅ Message Added", newMessage);
   }, []);
 
-  // God-tier EOM parser for sophisticated emotional breathing
+  // Advanced EOM parser with enhanced emotional intelligence
   const parseAdvancedEOM = useCallback((text) => {
-    // Match advanced EOM patterns: <EOM::pause=1000 speed=normal emotion=flirty>
-    const eomRegex = /<EOM::(?:pause=(\d+))?(?:\s+speed=(\w+))?(?:\s+emotion=([\w-]+))?>/g;
+    // Enhanced regex to capture all EOM variations
+    const eomRegex = /<EOM(?:::)?(?:pause=(\d+))?(?:\s+speed=(\w+))?(?:\s+emotion=([\w-]+))?>/g;
     const parts = [];
     let lastIndex = 0;
     let match;
     
     while ((match = eomRegex.exec(text)) !== null) {
-      // Add text before EOM tag
+      // Add text before each EOM tag
       if (match.index > lastIndex) {
-        parts.push({
-          text: text.slice(lastIndex, match.index).trim(),
-          pause: 0,
-          speed: 'normal',
-          emotion: 'neutral'
-        });
+        const textPart = text.slice(lastIndex, match.index).trim();
+        if (textPart) {
+          parts.push({
+            text: textPart,
+            pause: 0,
+            speed: 'normal',
+            emotion: 'neutral',
+            isEOM: false
+          });
+        }
       }
       
-      // Parse EOM parameters
+      // Parse EOM parameters with intelligent defaults
       const pause = parseInt(match[1]) || 1000;
       const speed = match[2] || 'normal';
       const emotion = match[3] || 'neutral';
       
+      // Add EOM instruction part
       parts.push({
         text: '',
         pause,
@@ -480,25 +644,64 @@ export default function BonnieChat() {
     
     // Add remaining text after last EOM
     if (lastIndex < text.length) {
-      parts.push({
-        text: text.slice(lastIndex).trim(),
-        pause: 0,
-        speed: 'normal',
-        emotion: 'neutral'
-      });
+      const remainingText = text.slice(lastIndex).trim();
+      if (remainingText) {
+        parts.push({
+          text: remainingText,
+          pause: 0,
+          speed: 'normal',
+          emotion: 'neutral',
+          isEOM: false
+        });
+      }
     }
     
-    // If no EOM tags found, return single part
+    // If no EOM tags found, handle as simple split on basic <EOM>
     if (parts.length === 0) {
-      parts.push({
-        text: text.trim(),
-        pause: 0,
+      const simpleParts = text.split('<EOM>').filter(part => part.trim());
+      return simpleParts.map((part, index) => ({
+        text: part.trim(),
+        pause: index > 0 ? 1500 : 0, // Default pause between parts
         speed: 'normal',
-        emotion: 'neutral'
-      });
+        emotion: 'neutral',
+        isEOM: false
+      }));
     }
     
     return parts.filter(part => part.text || part.isEOM);
+  }, []);
+
+  // Dynamic typing speed calculation based on emotional context
+  const calculateTypingSpeed = useCallback((text, emotion, speed, userSentiment, emotionalState) => {
+    // Base speed from constants
+    const baseSpeed = CONSTANTS.TYPING_SPEEDS[speed] || CONSTANTS.TYPING_SPEEDS.normal;
+    
+    // Emotional speed modifier
+    const emotionalModifier = CONSTANTS.TYPING_SPEEDS.emotional[emotion] || 1.0;
+    
+    // User sentiment influence (mirror their energy)
+    const sentimentModifier = CONSTANTS.TYPING_SPEEDS.emotional[userSentiment.primary] || 1.0;
+    
+    // Emotional drift influence (more stable = faster, more chaotic = slower)
+    const stabilityModifier = 0.8 + (emotionalState.stabilityScore * 0.4);
+    
+    // Text length influence (longer messages get slightly faster)
+    const lengthModifier = text.length > 50 ? 0.9 : 1.0;
+    
+    // Calculate final speed
+    const finalSpeed = baseSpeed * emotionalModifier * sentimentModifier * stabilityModifier * lengthModifier;
+    
+    godLog("⚡ Typing Speed Calculation", {
+      baseSpeed,
+      emotion,
+      emotionalModifier,
+      sentimentModifier,
+      stabilityModifier,
+      lengthModifier,
+      finalSpeed: Math.round(finalSpeed)
+    });
+    
+    return Math.max(Math.round(finalSpeed), 15); // Minimum 15ms per character
   }, []);
 
   const simulateBonnieTyping = useCallback((reply, personality, sentiment) => {
@@ -515,43 +718,66 @@ export default function BonnieChat() {
     let totalDelay = 0;
     let currentEmotion = 'neutral';
     
-    // Process each part with emotional breathing patterns
+    // Enhanced emotional multipliers based on psychological timing
+    const emotionalMultipliers = {
+      'shy': 1.8,          // Hesitation, processing time
+      'vulnerable': 2.1,   // Deep emotional processing
+      'sad': 2.0,          // Heavy emotional weight
+      'intimate': 1.6,     // Closeness, careful consideration
+      'passionate': 1.3,   // Intensity, but quick decision
+      'gentle': 1.4,       // Thoughtful, caring response
+      'teasing': 0.7,      // Quick wit, playful
+      'flirty': 0.9,       // Confident, but with flair
+      'playful': 0.8,      // Light-hearted, energetic
+      'dominant': 0.6,     // Decisive, commanding
+      'submissive': 1.4,   // Consideration, deference
+      'neutral': 1.0
+    };
+    
+    // Process each part with sophisticated emotional intelligence
     parts.forEach((part, index) => {
       if (part.isEOM) {
         // This is an EOM pause instruction
-        const emotionalMultiplier = {
-          'shy': 1.8,
-          'teasing': 0.7,
-          'flirty': 0.9,
-          'passionate': 1.3,
-          'intimate': 1.6,
-          'playful': 0.8,
-          'sad': 2.0,
-          'vulnerable': 1.9,
-          'dominant': 0.6,
-          'submissive': 1.4
-        };
+        const baseMultiplier = emotionalMultipliers[part.emotion] || 1.0;
         
-        const multiplier = emotionalMultiplier[part.emotion] || 1.0;
-        const emotionalPause = Math.floor(part.pause * multiplier);
+        // Factor in user's emotional state and stability
+        const driftInfluence = 1 + (emotionalState.drift * 0.3); // More drift = longer pauses
+        const intensityInfluence = 1 + (sentiment.intensity * 0.2); // Higher intensity = longer pauses
+        
+        const finalMultiplier = baseMultiplier * driftInfluence * intensityInfluence;
+        const emotionalPause = Math.floor(part.pause * finalMultiplier);
+        
         currentEmotion = part.emotion;
         
-                 // Show thinking/breathing indicator during emotional pause
-         setTimeout(() => {
-           setTyping(false);
-           setThinking(true);
-           setCurrentThinkingEmotion(part.emotion);
-           godLog(`💭 Bonnie is ${part.emotion === 'shy' ? 'hesitating' : 
-                                     part.emotion === 'flirty' ? 'smirking' :
-                                     part.emotion === 'passionate' ? 'breathing heavily' :
-                                     part.emotion === 'intimate' ? 'getting closer' :
-                                     part.emotion === 'vulnerable' ? 'taking a deep breath' :
-                                     'thinking'}...`, { 
-             emotion: part.emotion, 
-             pause: emotionalPause,
-             originalPause: part.pause 
-           });
-         }, totalDelay);
+        // Show thinking/breathing indicator during emotional pause
+        setTimeout(() => {
+          setTyping(false);
+          setThinking(true);
+          setCurrentThinkingEmotion(part.emotion);
+          
+          const thinkingActions = {
+            'shy': 'hesitating',
+            'vulnerable': 'taking a deep breath',
+            'sad': 'processing emotions',
+            'intimate': 'getting closer',
+            'passionate': 'breathing heavily',
+            'gentle': 'choosing words carefully',
+            'teasing': 'plotting something',
+            'flirty': 'smirking',
+            'playful': 'giggling',
+            'dominant': 'considering',
+            'submissive': 'waiting for guidance'
+          };
+          
+          godLog(`💭 Bonnie is ${thinkingActions[part.emotion] || 'thinking'}...`, { 
+            emotion: part.emotion, 
+            pause: emotionalPause,
+            originalPause: part.pause,
+            multiplier: finalMultiplier,
+            userDrift: emotionalState.drift,
+            userIntensity: sentiment.intensity
+          });
+        }, totalDelay);
         
         totalDelay += emotionalPause;
         return;
@@ -559,66 +785,58 @@ export default function BonnieChat() {
       
       if (!part.text) return;
       
-      // Calculate typing speed based on emotion
-      const speedMultipliers = {
-        'slow': 50,
-        'normal': 30,
-        'fast': 15
-      };
+      // Calculate sophisticated typing speed
+      const typingSpeed = calculateTypingSpeed(
+        part.text, 
+        currentEmotion, 
+        part.speed, 
+        sentiment, 
+        emotionalState
+      );
       
-      const emotionalSpeedAdjustment = {
-        'shy': 1.5,
-        'teasing': 0.8,
-        'flirty': 0.9,
-        'passionate': 0.7,
-        'intimate': 1.2,
-        'playful': 0.8,
-        'sad': 1.4,
-        'vulnerable': 1.3,
-        'dominant': 0.6,
-        'submissive': 1.1
-      };
+      const partTypingDuration = Math.min(part.text.length * typingSpeed, 6000);
       
-      const baseSpeed = speedMultipliers[part.speed] || 30;
-      const emotionAdjustment = emotionalSpeedAdjustment[currentEmotion] || 1.0;
-      const adjustedSpeed = baseSpeed * emotionAdjustment;
-      
-      const partTypingDuration = Math.min(part.text.length * adjustedSpeed, 4000);
-      
-             // Show typing indicator
-       setTimeout(() => {
-         setThinking(false);
-         setCurrentThinkingEmotion('neutral');
-         setTyping(true);
-       }, totalDelay);
-      
-      // Add the message part
+      // Show typing indicator with brief transition
       setTimeout(() => {
-        addMessage(part.text, 'bonnie', personality, { 
+        setThinking(false);
+        setCurrentThinkingEmotion('neutral');
+        setTyping(true);
+      }, totalDelay);
+      
+      // Add the message part with enhanced sentiment tracking
+      setTimeout(() => {
+        const enhancedSentiment = { 
           ...sentiment, 
-          primary: currentEmotion,
-          intensity: part.emotion !== 'neutral' ? 3 : sentiment?.intensity || 1
-        });
+          primary: currentEmotion !== 'neutral' ? currentEmotion : sentiment.primary,
+          intensity: currentEmotion !== 'neutral' ? 
+            Math.min(sentiment.intensity + 1, CONSTANTS.EMOTIONAL_INTENSITIES.EXTREME) : 
+            sentiment.intensity,
+          responseEmotion: currentEmotion
+        };
         
-                 // Clear indicators if this is the last part
-         if (index === parts.length - 1) {
-           setTyping(false);
-           setThinking(false);
-           setCurrentThinkingEmotion('neutral');
-         }
+        addMessage(part.text, 'bonnie', personality, enhancedSentiment);
+        
+        // Clear indicators if this is the last part
+        if (index === parts.length - 1) {
+          setTyping(false);
+          setThinking(false);
+          setCurrentThinkingEmotion('neutral');
+        }
       }, totalDelay + partTypingDuration);
       
       totalDelay += partTypingDuration;
     });
     
-    godLog("🧬 God-Tier EOM Processing", { 
+    godLog("🧬 Advanced EOM Processing Complete", { 
       originalMessage: reply,
       parsedParts: parts.length,
       totalDuration: totalDelay,
       emotions: parts.filter(p => p.isEOM).map(p => p.emotion),
-      pauses: parts.filter(p => p.isEOM).map(p => p.pause)
+      pauses: parts.filter(p => p.isEOM).map(p => p.pause),
+      emotionalState: emotionalState,
+      userSentiment: sentiment
     });
-  }, [addMessage, parseAdvancedEOM]);
+  }, [addMessage, parseAdvancedEOM, calculateTypingSpeed, sentiment, emotionalState]);
 
   const handleSend = useCallback(async () => {
     const text = input.trim();
