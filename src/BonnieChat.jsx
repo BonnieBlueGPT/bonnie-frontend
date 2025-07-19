@@ -1220,6 +1220,18 @@ const BonnieDashboard = () => {
                   EOM Active • GPT-4.1 Enhanced
                 </p>
               </div>
+              
+              {/* 🔥 ADULT MODE - CHAT VIEW */}
+              <select 
+                value={adultMode} 
+                onChange={(e) => setAdultMode(e.target.value)}
+                className="px-2 py-1 rounded bg-pink-500 text-white text-xs font-bold"
+              >
+                <option value="off">Normal</option>
+                <option value="flirty">🔥 Flirty</option>
+                <option value="intimate">💋 Intimate</option>
+                <option value="dominant">👑 Dominant</option>
+              </select>
             </div>
           </div>
 
