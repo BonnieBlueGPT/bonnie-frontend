@@ -4,15 +4,16 @@ import { ADULT_PRICING } from './adultPersonality.js';
 class PaymentService {
   constructor() {
     this.stripeKey = 'pk_test_51234567890'; // REPLACE WITH YOUR STRIPE KEY
-    this.baseURL = 'https://bonnie-backend-server.onrender.com';
+    this.baseURL = 'http://localhost:3001'; // LOCAL PAYMENT SERVER
   }
 
-  // Quick Stripe Checkout for Adult Features
+  // Quick Payment Processing
   async initiatePayment(planType, duration = 'monthly') {
     try {
       const price = ADULT_PRICING[planType][duration];
+      const userId = localStorage.getItem('bonnie_user_id') || 'user_' + Date.now();
       
-      // Create Stripe Checkout Session
+      // Process payment
       const response = await fetch(`${this.baseURL}/create-checkout-session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -20,25 +21,48 @@ class PaymentService {
           planType,
           duration,
           price,
-          successUrl: window.location.origin + '/success',
-          cancelUrl: window.location.origin + '/cancel'
+          userId
         })
       });
 
-      const { checkoutUrl } = await response.json();
+      const result = await response.json();
       
-      // Redirect to Stripe Checkout
-      window.location.href = checkoutUrl;
+      if (result.success) {
+        // SIMULATE SUCCESSFUL PAYMENT
+        alert(`💳 Payment Successful! Welcome to ${planType} Bonnie - $${price}`);
+        
+        // Activate premium locally
+        localStorage.setItem('bonnie_premium', 'true');
+        localStorage.setItem('bonnie_plan', planType);
+        localStorage.setItem('bonnie_user_id', userId);
+        
+        // Reload page to activate premium
+        window.location.reload();
+      }
       
     } catch (error) {
       console.error('Payment Error:', error);
-      throw new Error('Payment failed. Please try again.');
+      alert('Payment failed. Please try again.');
     }
   }
 
   // Check if user has premium access
   async checkPremiumStatus(userId) {
     try {
+      // Check local storage first (for demo)
+      const localPremium = localStorage.getItem('bonnie_premium');
+      const localPlan = localStorage.getItem('bonnie_plan');
+      
+      if (localPremium === 'true') {
+        return {
+          isPremium: true,
+          plan: localPlan || 'intimate',
+          expiresAt: '2024-12-31',
+          features: ['adult_chat', 'unlimited_messages']
+        };
+      }
+      
+      // Otherwise check server
       const response = await fetch(`${this.baseURL}/check-premium/${userId}`);
       const data = await response.json();
       

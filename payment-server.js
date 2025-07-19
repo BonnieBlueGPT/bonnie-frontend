@@ -1,51 +1,88 @@
-// QUICK PAYMENT SERVER - COPY PASTE AND RUN
+// BONNIE AI PAYMENT SERVER - WINDOWS READY
 const express = require('express');
 const cors = require('cors');
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:5173'],
+  credentials: true
+}));
 app.use(express.json());
 
-// FAKE STRIPE FOR TESTING - REPLACE WITH REAL STRIPE
+// REVENUE TRACKING
+let totalRevenue = 0;
+let subscribers = [];
+
+// STRIPE SIMULATION (REPLACE WITH REAL STRIPE LATER)
 app.post('/create-checkout-session', async (req, res) => {
-  const { planType, price } = req.body;
+  const { planType, price, userId } = req.body;
   
-  // FOR TESTING - SIMULATE STRIPE CHECKOUT URL
-  const fakeCheckoutUrl = `https://checkout.stripe.com/fake?plan=${planType}&price=${price}`;
+  console.log(`💰 Payment Request: ${planType} - $${price}`);
+  
+  // SIMULATE PAYMENT SUCCESS
+  setTimeout(() => {
+    totalRevenue += parseFloat(price);
+    subscribers.push({ userId, planType, price, date: new Date() });
+    console.log(`🎉 NEW SUBSCRIBER! Total Revenue: $${totalRevenue}`);
+  }, 2000);
   
   res.json({ 
-    checkoutUrl: fakeCheckoutUrl,
-    message: `Would charge $${price} for ${planType} plan`
+    success: true,
+    message: `Payment processing for ${planType} plan - $${price}`,
+    sessionId: 'sim_' + Date.now()
   });
 });
 
-// CHECK PREMIUM STATUS
+// PREMIUM STATUS - CONTROLS PAYWALL
 app.get('/check-premium/:userId', (req, res) => {
-  // FOR TESTING - MAKE EVERYONE PREMIUM
+  const { userId } = req.params;
+  
+  // FOR TESTING PAYWALL: Change isPremium to false
+  // FOR TESTING PREMIUM: Change isPremium to true
   res.json({
-    isPremium: true, // SET TO FALSE TO TEST PAYWALL
-    plan: 'intimate',
-    expiresAt: '2024-12-31',
-    features: ['adult_chat', 'unlimited_messages']
+    isPremium: false, // SET TO FALSE TO TEST PAYWALL
+    plan: 'free',
+    messageCount: 0,
+    maxMessages: 3,
+    features: []
+  });
+});
+
+// ACTIVATE PREMIUM (AFTER PAYMENT)
+app.post('/activate-premium', (req, res) => {
+  const { userId, planType } = req.body;
+  console.log(`✅ Premium activated for ${userId}: ${planType}`);
+  res.json({ success: true, plan: planType });
+});
+
+// REVENUE DASHBOARD
+app.get('/revenue', (req, res) => {
+  res.json({
+    totalRevenue,
+    subscriberCount: subscribers.length,
+    subscribers: subscribers.slice(-10) // Last 10
   });
 });
 
 // SUCCESS PAGE
 app.get('/success', (req, res) => {
   res.send(`
-    <h1>🎉 Payment Successful!</h1>
-    <p>You now have access to Adult Bonnie!</p>
-    <script>
-      setTimeout(() => {
-        window.close();
-        window.opener.location.reload();
-      }, 3000);
-    </script>
+    <html>
+    <head><title>Payment Successful!</title></head>
+    <body style="font-family: Arial; text-align: center; background: linear-gradient(45deg, #ff6b9d, #e91e63); color: white; padding: 50px;">
+      <h1>🎉 Welcome to Premium Bonnie!</h1>
+      <p>Your payment was successful. Enjoy unlimited intimate conversations!</p>
+      <button onclick="window.close()" style="background: white; color: #e91e63; padding: 15px 30px; border: none; border-radius: 25px; font-size: 16px; cursor: pointer;">Close & Continue</button>
+    </body>
+    </html>
   `);
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = 3001;
 app.listen(PORT, () => {
-  console.log(`💰 Payment server running on port ${PORT}`);
-  console.log(`🔥 READY TO MAKE MONEY!`);
+  console.log('🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥');
+  console.log('💰 BONNIE AI PAYMENT SERVER RUNNING');
+  console.log(`🚀 Server: http://localhost:${PORT}`);
+  console.log(`💳 Revenue Dashboard: http://localhost:${PORT}/revenue`);
+  console.log('🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥');
 });

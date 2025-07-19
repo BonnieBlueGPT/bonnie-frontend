@@ -236,6 +236,17 @@ const BonnieDashboard = () => {
   const [adultMessageCount, setAdultMessageCount] = useState(0);
   const [showPaywall, setShowPaywall] = useState(false);
   
+  // Check premium status on load
+  useEffect(() => {
+    const checkPremium = async () => {
+      const userId = localStorage.getItem('bonnie_user_id') || 'demo_user';
+      const status = await PaymentService.checkPremiumStatus(userId);
+      setIsPremium(status.isPremium);
+      console.log('💰 Premium Status:', status);
+    };
+    checkPremium();
+  }, []);
+  
   // Galatea Integration
   const [sessionId, setSessionId] = useState(() => generateSessionId());
   const [online, setOnline] = useState(true);
