@@ -29,7 +29,9 @@
     "benchmark": "node scripts/benchmark.js",
     "security-audit": "npm audit && node scripts/security-check.js",
     "backup-db": "node scripts/backup-database.js",
-    "restore-db": "node scripts/restore-database.js"
+    "restore-db": "node scripts/restore-database.js",
+    "check-deploy": "node scripts/quick-deploy.js",
+    "verify": "node scripts/quick-deploy.js"
   },
   "keywords": [
     "ai",
