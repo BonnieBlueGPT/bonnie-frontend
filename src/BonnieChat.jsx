@@ -514,6 +514,10 @@ const BonnieDashboard = () => {
       // Handle both chatData.reply and chatData.message formats
       const responseText = chatData?.reply || chatData?.message;
       
+      console.log('🔧 DEBUG chatData:', chatData);
+      console.log('🔧 DEBUG responseText:', responseText);
+      console.log('🔧 DEBUG condition check:', !!(chatData && responseText));
+      
       if (chatData && responseText) {
         // Parse EOM tags from Galatea engine (handle both : and :: formats)
         const eomMatch = responseText.match(/<EOM:([^>]+)>/) || responseText.match(/<EOM::([^>]+)>/);
