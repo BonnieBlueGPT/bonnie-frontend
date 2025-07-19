@@ -1,0 +1,75 @@
+{
+  "name": "bonnie-ultimate-ai-girlfriend",
+  "version": "1.0.0",
+  "description": "The most advanced AI girlfriend system ever built - Complete Windows package",
+  "main": "backend/server.js",
+  "type": "module",
+  "scripts": {
+    "setup": "npm install && npm run setup:env",
+    "setup:env": "node scripts/setup-environment.js",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm start",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "start": "node backend/server.js",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd backend && npm test",
+    "test:frontend": "cd frontend && npm test",
+    "deploy": "node scripts/deploy.js",
+    "database:setup": "node scripts/setup-database.js",
+    "database:backup": "node scripts/backup-database.js",
+    "logs": "node scripts/view-logs.js",
+    "health": "node scripts/health-check.js",
+    "reset": "node scripts/reset-system.js"
+  },
+  "keywords": [
+    "ai",
+    "girlfriend",
+    "chatbot",
+    "emotional-intelligence",
+    "cross-device",
+    "windows"
+  ],
+  "author": "Ultimate AI Systems",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "axios": "^1.6.2",
+    "@supabase/supabase-js": "^2.38.4",
+    "winston": "^3.11.0",
+    "node-cron": "^3.0.3",
+    "helmet": "^7.1.0",
+    "compression": "^1.7.4",
+    "express-rate-limit": "^7.1.5",
+    "uuid": "^9.0.1",
+    "moment": "^2.29.4",
+    "chalk": "^5.3.0",
+    "figlet": "^1.7.0",
+    "inquirer": "^9.2.12",
+    "ora": "^7.0.1",
+    "boxen": "^7.1.1"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.0.2",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "@babel/preset-env": "^7.23.6",
+    "eslint": "^8.55.0",
+    "prettier": "^3.1.1"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/bonnie-ultimate-ai-girlfriend.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/bonnie-ultimate-ai-girlfriend/issues"
+  },
+  "homepage": "https://github.com/yourusername/bonnie-ultimate-ai-girlfriend#readme"
+}
