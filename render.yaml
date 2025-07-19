@@ -1,0 +1,165 @@
+# 🚀 BONNIE ULTIMATE AI GIRLFRIEND SYSTEM - Render Deployment Configuration
+# This file defines all services needed for production deployment on Render
+
+services:
+  # Main Backend API Service
+  - type: web
+    name: bonnie-ai-backend
+    env: node
+    plan: starter # Upgrade to standard or pro for production
+    buildCommand: npm install
+    startCommand: npm start
+    repo: https://github.com/trainmygirl/bonnie-ai-system.git
+    branch: main
+    
+    # Environment Variables (Set these in Render Dashboard)
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: SITE_URL
+        fromService:
+          type: web
+          name: bonnie-ai-backend
+          property: host
+      - key: SUPABASE_URL
+        sync: false # Set manually in Render dashboard
+      - key: SUPABASE_KEY
+        sync: false # Set manually in Render dashboard
+      - key: OPENROUTER_API_KEY
+        sync: false # Set manually in Render dashboard
+      - key: JWT_SECRET
+        generateValue: true # Auto-generate secure JWT secret
+      - key: LOG_LEVEL
+        value: info
+      - key: ENABLE_METRICS
+        value: true
+      - key: CACHE_TTL_PROFILES
+        value: 300
+      - key: CACHE_TTL_MEMORIES
+        value: 120
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: 100
+      - key: CHAT_RATE_LIMIT_MAX_REQUESTS
+        value: 30
+    
+    # Health Check Configuration
+    healthCheckPath: /health
+    
+    # Auto-Deploy Settings
+    autoDeploy: true
+    
+    # Resource Allocation
+    numInstances: 1
+    
+    # Custom Headers for Security
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+
+  # Static Frontend Service (Optional)
+  - type: static
+    name: bonnie-ai-frontend
+    buildCommand: npm run build
+    staticPublishPath: ./dist
+    repo: https://github.com/trainmygirl/bonnie-ai-frontend.git
+    branch: main
+    
+    # Custom Headers
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /index.html
+        name: Cache-Control
+        value: public, max-age=0, must-revalidate
+    
+    # Routes Configuration
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  # Background Worker Service (Optional)
+  - type: worker
+    name: bonnie-ai-worker
+    env: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: node workers/background-tasks.js
+    repo: https://github.com/trainmygirl/bonnie-ai-system.git
+    branch: main
+    
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: WORKER_TYPE
+        value: background_tasks
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+
+# Database Configuration (External - Supabase)
+databases: []
+
+# Redis Configuration (Optional - for caching)
+# Note: You can add Redis from Render's add-ons or use external service
+redis: []
+
+# Cron Jobs for Maintenance
+crons:
+  - name: daily-cleanup
+    schedule: "0 2 * * *" # Every day at 2 AM
+    command: node scripts/daily-cleanup.js
+    
+  - name: weekly-analytics
+    schedule: "0 3 * * 0" # Every Sunday at 3 AM
+    command: node scripts/weekly-analytics.js
+    
+  - name: health-check
+    schedule: "*/15 * * * *" # Every 15 minutes
+    command: curl -f $RENDER_EXTERNAL_URL/health
+
+# Environment Groups (Optional - for shared env vars)
+envGroups: []
+
+# Alerts Configuration
+alerts:
+  - name: high-error-rate
+    rules:
+      - field: error_rate
+        op: ">"
+        value: 0.05 # 5% error rate
+        duration: 300 # 5 minutes
+    notifications:
+      - type: email
+        target: admin@trainmygirl.com
+
+  - name: high-response-time
+    rules:
+      - field: response_time_p95
+        op: ">"
+        value: 2000 # 2 seconds
+        duration: 300
+    notifications:
+      - type: slack
+        target: "#alerts"
+
+  - name: low-memory
+    rules:
+      - field: memory_usage
+        op: ">"
+        value: 0.85 # 85% memory usage
+        duration: 180 # 3 minutes
+    notifications:
+      - type: email
+        target: admin@trainmygirl.com
