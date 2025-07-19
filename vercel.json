@@ -1,10 +1,11 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
-  "buildCommand": null,
+  "buildCommand": "echo 'No build needed - serving static HTML'",
   "devCommand": null,
-  "installCommand": null,
+  "installCommand": "echo 'No install needed'",
   "outputDirectory": ".",
+  "framework": null,
   "headers": [
     {
       "source": "/(.*)",
