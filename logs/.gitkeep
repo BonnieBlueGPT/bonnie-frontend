@@ -1,0 +1,7 @@
+# Logs Directory
+
+This directory stores application logs:
+- error.log - Error-level logs only
+- combined.log - All application logs
+
+The directory is required for winston logger to function properly.
