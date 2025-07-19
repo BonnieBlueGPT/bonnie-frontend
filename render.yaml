@@ -2,68 +2,62 @@
 # This file defines all services needed for production deployment on Render
 
 services:
-  # Main Backend API Service
   - type: web
-    name: bonnie-ai-backend
+    name: bonnie-ai-production
     env: node
-    plan: starter # Upgrade to standard or pro for production
-    buildCommand: npm install
-    startCommand: npm start
-    repo: https://github.com/trainmygirl/bonnie-ai-system.git
-    branch: main
-    
-    # Environment Variables (Set these in Render Dashboard)
+    region: oregon
+    plan: starter
+    buildCommand: cd backend && npm install --production
+    startCommand: cd backend && npm start
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 3001
-      - key: SITE_URL
-        fromService:
-          type: web
-          name: bonnie-ai-backend
-          property: host
-      - key: SUPABASE_URL
-        sync: false # Set manually in Render dashboard
-      - key: SUPABASE_KEY
-        sync: false # Set manually in Render dashboard
-      - key: OPENROUTER_API_KEY
-        sync: false # Set manually in Render dashboard
       - key: JWT_SECRET
-        generateValue: true # Auto-generate secure JWT secret
+        generateValue: true
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: AI_MODEL
+        value: openai/gpt-4o-mini
       - key: LOG_LEVEL
         value: info
-      - key: ENABLE_METRICS
+      - key: HEALTH_CHECK_ENABLED
         value: true
-      - key: CACHE_TTL_PROFILES
-        value: 300
-      - key: CACHE_TTL_MEMORIES
+      - key: ENABLE_HELMET
+        value: true
+      - key: ENABLE_COMPRESSION
+        value: true
+      - key: RATE_LIMIT_FREE
+        value: 20
+      - key: RATE_LIMIT_PREMIUM
+        value: 60
+      - key: RATE_LIMIT_VIP
         value: 120
-      - key: RATE_LIMIT_MAX_REQUESTS
-        value: 100
-      - key: CHAT_RATE_LIMIT_MAX_REQUESTS
-        value: 30
-    
-    # Health Check Configuration
+      - key: CIRCUIT_BREAKER_THRESHOLD
+        value: 5
+      - key: CIRCUIT_BREAKER_TIMEOUT
+        value: 60000
+      - key: ENABLE_CONTENT_MODERATION
+        value: true
+      - key: MIN_RESPONSE_DELAY
+        value: 400
+      - key: MAX_RESPONSE_DELAY
+        value: 4000
     healthCheckPath: /health
-    
-    # Auto-Deploy Settings
     autoDeploy: true
+    preDeployCommand: echo "🚀 Deploying Bonnie AI Production v24.0"
     
-    # Resource Allocation
-    numInstances: 1
-    
-    # Custom Headers for Security
-    headers:
-      - path: /*
-        name: X-Frame-Options
-        value: DENY
-      - path: /*
-        name: X-Content-Type-Options
-        value: nosniff
-      - path: /*
-        name: Referrer-Policy
-        value: strict-origin-when-cross-origin
+  # Optional Redis add-on for enhanced performance
+  # Uncomment to enable advanced caching
+  # - type: redis
+  #   name: bonnie-redis
+  #   plan: starter
+  #   maxmemoryPolicy: allkeys-lru
 
   # Static Frontend Service (Optional)
   - type: static
