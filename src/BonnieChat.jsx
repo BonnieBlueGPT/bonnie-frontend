@@ -491,11 +491,34 @@ const BonnieDashboard = () => {
 
       godLog('Galatea EOM Response', chatData);
 
-      if (chatData && chatData.message) {
-        // Extract emotion from EOM response
-        const emotionMatch = chatData.message.match(/\[emotion:\s*(\w+)\]/);
-        const responseEmotion = emotionMatch ? emotionMatch[1] : 'loving';
-        const cleanMessage = chatData.message.replace(/\[emotion:\s*\w+\]/g, '').trim();
+      // Handle both chatData.reply and chatData.message formats
+      const responseText = chatData?.reply || chatData?.message;
+      
+      if (chatData && responseText) {
+        // Parse EOM tags from Galatea engine
+        const eomMatch = responseText.match(/<EOM::([^>]+)>/);
+        let pauseTime = 2000;
+        let speedSetting = 'normal';
+        let responseEmotion = 'loving';
+        
+        if (eomMatch) {
+          const eomParams = eomMatch[1];
+          const pauseMatch = eomParams.match(/pause=(\d+)/);
+          const speedMatch = eomParams.match(/speed=(\w+)/);
+          const emotionMatch = eomParams.match(/emotion=([^,\s]+)/);
+          
+          if (pauseMatch) pauseTime = parseInt(pauseMatch[1]);
+          if (speedMatch) speedSetting = speedMatch[1];
+          if (emotionMatch) responseEmotion = emotionMatch[1];
+          
+          godLog('EOM Parsed', { pauseTime, speedSetting, responseEmotion });
+        }
+        
+        // Clean message by removing all EOM tags and any old format tags
+        const cleanMessage = responseText
+          .replace(/<EOM::[^>]+>/g, '')
+          .replace(/\[emotion:\s*\w+\]/g, '')
+          .trim();
 
         // Update bond score
         const bondIncrease = chatData.bondIncrease || analysisData?.bondImpact || 0.5;
@@ -549,8 +572,7 @@ const BonnieDashboard = () => {
 
         // EOM Typing Simulation
         setIsTyping(true);
-        const typingDelay = chatData.pause || currentEmotionStyle.typingSpeed || 2000;
-        const typingSpeed = chatData.speed || 'normal';
+        const typingDelay = pauseTime;
 
         setTimeout(() => {
           const aiMessage = {
@@ -560,8 +582,8 @@ const BonnieDashboard = () => {
             emotion: responseEmotion,
             timestamp: new Date(),
             bondImpact: bondIncrease,
-            pause: typingDelay,
-            speed: typingSpeed
+            pause: pauseTime,
+            speed: speedSetting
           };
 
           setMessages(prev => [...prev, aiMessage]);
