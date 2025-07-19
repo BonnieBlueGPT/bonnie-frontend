@@ -538,7 +538,16 @@ const BonnieDashboard = () => {
         const cleanMessage = cleanEOMTags(responseText);
 
         console.log('🔥 Raw Response:', responseText);
+        console.log('🔍 Testing cleanEOMTags with raw text...');
         console.log('✨ Clean Message:', cleanMessage);
+        
+        // Extra debug - test each regex individually
+        const testClean1 = responseText.replace(/<EOM:[^>]*>/gi, '[REMOVED-EOM-SINGLE]');
+        const testClean2 = testClean1.replace(/<EOM::[^>]*>/gi, '[REMOVED-EOM-DOUBLE]');
+        const testClean3 = testClean2.replace(/<EOM[^>]*>/gi, '[REMOVED-EOM-ANY]');
+        console.log('🧪 Step by step:', testClean1);
+        console.log('🧪 Step by step:', testClean2);
+        console.log('🧪 Step by step:', testClean3);
 
         // Update bond score
         const bondIncrease = chatData.bondIncrease || analysisData?.bondImpact || 0.5;
