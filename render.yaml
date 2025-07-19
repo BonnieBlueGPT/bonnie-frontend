@@ -9,6 +9,7 @@ services:
     plan: starter
     buildCommand: npm install --production
     startCommand: npm start
+    rootDir: .
     envVars:
       - key: NODE_ENV
         value: production

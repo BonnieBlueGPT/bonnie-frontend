@@ -9,10 +9,10 @@
     "npm": ">=9.0.0"
   },
   "scripts": {
-    "start": "node backend/server-production.js",
-    "dev": "NODE_ENV=development nodemon backend/server-production.js",
-    "build": "npm install --production",
-    "production:setup": "npm ci && npm start"
+    "start": "cd backend && node server-production.js",
+    "dev": "cd backend && NODE_ENV=development nodemon server-production.js",
+    "build": "cd backend && npm install --production",
+    "production:setup": "cd backend && npm ci && npm start"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -48,6 +48,6 @@
     "nodejs",
     "production"
   ],
-  "author": "Bonnie AI Team",
+  "author": "BonnieBlueGPT",
   "license": "MIT"
 }
