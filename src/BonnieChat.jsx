@@ -786,18 +786,19 @@ const BonnieDashboard = () => {
 
   // Dashboard Rendering
   const renderDashboard = () => (
-    <div className="flex-1 overflow-y-auto p-6 space-y-6">
-      {/* Top Row: Bonnie's To Do List + Inbox */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="flex-1 overflow-y-auto p-3 md:p-6 space-y-4 md:space-y-6">
+      {/* Top Row: Bonnie's To Do List + Inbox - Mobile Split Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         {/* Bonnie's To Do List (GPT-4.1 Powered) */}
-        <div className="bg-white rounded-xl p-6 shadow-xl border border-gray-100 relative overflow-hidden">
+        <div className="bg-white rounded-xl p-4 md:p-6 shadow-xl border border-gray-100 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-full -translate-y-12 translate-x-12" />
           
           <div className="relative z-10">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="font-bold text-xl text-gray-800 flex items-center">
-                <Target className="w-6 h-6 mr-3 text-blue-500" />
-                Bonnie's To Do List
+            <div className="flex items-center justify-between mb-4 md:mb-6">
+              <h3 className="font-bold text-lg md:text-xl text-gray-800 flex items-center">
+                <Target className="w-5 h-5 md:w-6 md:h-6 mr-2 md:mr-3 text-blue-500" />
+                <span className="hidden md:inline">Bonnie's To Do List</span>
+                <span className="md:hidden">Tasks</span>
                 <span className="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">GPT-4.1</span>
                 {isGeneratingTask && (
                   <div className="ml-3 flex items-center gap-2 text-sm text-blue-600">
@@ -914,14 +915,17 @@ const BonnieDashboard = () => {
         </div>
 
         {/* Inbox (GPT-4.1 Powered) */}
-        <div className="bg-white rounded-xl p-6 shadow-xl border border-gray-100 relative overflow-hidden">
+        <div className="bg-white rounded-xl p-4 md:p-6 shadow-xl border border-gray-100 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-24 h-24 bg-purple-50 rounded-full -translate-y-12 translate-x-12" />
           
           <div className="relative z-10">
-            <h3 className="font-bold text-xl text-gray-800 mb-6 flex items-center">
-              <Bell className="w-6 h-6 mr-3 text-purple-500" />
+            <h3 className="font-bold text-lg md:text-xl text-gray-800 mb-4 md:mb-6 flex items-center">
+              <Bell className="w-5 h-5 md:w-6 md:h-6 mr-2 md:mr-3 text-purple-500" />
               Inbox
               <span className="ml-2 text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">GPT-4.1</span>
+              {inboxItems.length > 0 && (
+                <span className="ml-2 w-2 h-2 bg-red-500 rounded-full animate-pulse md:hidden"></span>
+              )}
             </h3>
 
             <div className="space-y-3">
