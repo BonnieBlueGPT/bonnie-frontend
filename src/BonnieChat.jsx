@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { generateAdultResponse, ADULT_MODES } from './services/adultPersonality.js';
+import { generateMaleResponse, MALE_PERSONALITIES } from './services/malePersonalities.js';
 import PaymentService from './services/paymentService.js';
 import useApiCall from './useApiCall';
 import { 
@@ -575,10 +576,10 @@ const BonnieDashboard = () => {
           godLog('EOM Parsed', { pauseTime, speedSetting, responseEmotion });
         }
         
-        // 💰 CHECK FOR ADULT CONTENT TRIGGERS
-        const adultResponse = generateAdultResponse(messageText, adultMode, bondScore);
+        // 💰 CHECK FOR MALE AI PERSONALITY TRIGGERS
+        const maleResponse = generateMaleResponse(messageText, adultMode, bondScore);
         
-        if (adultResponse && !isPremium) {
+        if (maleResponse && !isPremium) {
           // PAYWALL HIT - IMMEDIATE PAYMENT
           setAdultMessageCount(prev => prev + 1);
           
@@ -602,8 +603,8 @@ const BonnieDashboard = () => {
           }
         }
         
-        // Clean message using comprehensive EOM cleaner
-        const cleanMessage = adultResponse ? adultResponse.text : cleanEOMTags(responseText);
+                  // Clean message using comprehensive EOM cleaner
+          const cleanMessage = maleResponse ? maleResponse.text : cleanEOMTags(responseText);
 
         console.log('🔥 Raw Response:', responseText);
         console.log('🔍 Testing cleanEOMTags with raw text...');
@@ -1244,16 +1245,17 @@ const BonnieDashboard = () => {
                 </p>
               </div>
               
-              {/* 🔥 ADULT MODE - CHAT VIEW */}
+              {/* 🔥 MALE AI PERSONALITY SELECTOR */}
               <select 
                 value={adultMode} 
                 onChange={(e) => setAdultMode(e.target.value)}
-                className="px-2 py-1 rounded bg-pink-500 text-white text-xs font-bold"
+                className="px-2 py-1 rounded bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs font-bold"
               >
-                <option value="off">Normal</option>
-                <option value="flirty">🔥 Flirty</option>
-                <option value="intimate">💋 Intimate</option>
-                <option value="dominant">👑 Dominant</option>
+                <option value="off">Choose Your Man</option>
+                <option value="romantic">😍 Romantic Donnie ($24.99)</option>
+                <option value="alpha">🔥 Alpha Marcus ($34.99)</option>
+                <option value="sensitive">🥰 Gentle Alex ($29.99)</option>
+                <option value="mysterious">😏 Mysterious Ryan ($39.99)</option>
               </select>
             </div>
           </div>
