@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { generateAdultResponse, ADULT_MODES } from './services/adultPersonality.js';
+import PaymentService from './services/paymentService.js';
 import useApiCall from './useApiCall';
 import { 
   Send, 
@@ -227,6 +229,12 @@ const BonnieDashboard = () => {
   const [animatingBond, setAnimatingBond] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
   const [isGeneratingTask, setIsGeneratingTask] = useState(false);
+  
+  // 💰 PREMIUM FEATURES - MONEY MAKER
+  const [isPremium, setIsPremium] = useState(false);
+  const [adultMode, setAdultMode] = useState('off');
+  const [adultMessageCount, setAdultMessageCount] = useState(0);
+  const [showPaywall, setShowPaywall] = useState(false);
   
   // Galatea Integration
   const [sessionId, setSessionId] = useState(() => generateSessionId());
@@ -550,8 +558,18 @@ const BonnieDashboard = () => {
           godLog('EOM Parsed', { pauseTime, speedSetting, responseEmotion });
         }
         
+        // 💰 CHECK FOR ADULT CONTENT TRIGGERS
+        const adultResponse = generateAdultResponse(messageText, adultMode, bondScore);
+        
+        if (adultResponse && !isPremium) {
+          // PAYWALL HIT - SHOW PAYMENT MODAL
+          setShowPaywall(true);
+          PaymentService.showPaymentModal(adultMode || 'flirty');
+          return;
+        }
+        
         // Clean message using comprehensive EOM cleaner
-        const cleanMessage = cleanEOMTags(responseText);
+        const cleanMessage = adultResponse ? adultResponse.text : cleanEOMTags(responseText);
 
         console.log('🔥 Raw Response:', responseText);
         console.log('🔍 Testing cleanEOMTags with raw text...');
@@ -1404,6 +1422,25 @@ const BonnieDashboard = () => {
                 </div>
                 <div className="text-xs opacity-80">Bond</div>
               </div>
+            </div>
+
+            {/* 🔥 ADULT MODE TOGGLE - MONEY MAKER */}
+            <div className="flex justify-center space-x-2 mb-4">
+              <select 
+                value={adultMode} 
+                onChange={(e) => setAdultMode(e.target.value)}
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-red-500 text-white font-bold"
+              >
+                <option value="off">Normal Bonnie</option>
+                <option value="flirty">🔥 Flirty ($9.99)</option>
+                <option value="intimate">💋 Intimate ($19.99)</option>
+                <option value="dominant">👑 Dominant ($29.99)</option>
+              </select>
+              {!isPremium && adultMode !== 'off' && (
+                <span className="bg-red-500 text-white px-3 py-2 rounded-lg text-sm animate-pulse">
+                  💳 Premium Required
+                </span>
+              )}
             </div>
 
             {/* Settings & Controls */}
