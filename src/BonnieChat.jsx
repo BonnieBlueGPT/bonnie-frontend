@@ -1230,7 +1230,22 @@ const BonnieDashboard = () => {
                   ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
                   : `bg-gradient-to-r ${EMOTION_SYSTEM[message.emotion]?.bubbleGradient || 'from-gray-500 to-slate-600'} text-white mr-4`
               }`}>
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">{cleanEOMTags(message.text)}</p>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">{
+                  // FORCE CLEAN EOM TAGS AT RENDER TIME
+                  (() => {
+                    const text = message.text || '';
+                    const cleaned = text
+                      .replace(/<EOM:[^>]*>/gi, '')
+                      .replace(/<EOM::[^>]*>/gi, '')
+                      .replace(/<EOM[^>]*>/gi, '')
+                      .replace(/\[EOM[^\]]*\]/gi, '')
+                      .replace(/\[emotion:[^\]]*\]/gi, '')
+                      .trim();
+                    
+                    console.log('🎯 RENDER CLEAN:', { original: text, cleaned });
+                    return cleaned;
+                  })()
+                }</p>
                 
                 <div className="flex items-center justify-between mt-2 text-xs opacity-80">
                   <span>{message.timestamp.toLocaleTimeString()}</span>
