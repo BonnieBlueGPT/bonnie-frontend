@@ -443,14 +443,18 @@ const BonnieDashboard = () => {
     if (!text || typeof text !== 'string') return text;
     
     return text
-      .replace(/<EOM::[^>]*>/gi, '')
-      .replace(/<EOM[^>]*>/gi, '')
-      .replace(/\[EOM::[^\]]*\]/gi, '')
-      .replace(/\[EOM[^\]]*\]/gi, '')
-      .replace(/\[emotion:\s*[^\]]+\]/gi, '')
-      .replace(/\beom::[^\s\n]*/gi, '')
-      .replace(/\{[^}]*EOM[^}]*\}/gi, '')
-      .replace(/EOM::[^\s\n]*/gi, '')
+      .replace(/<EOM:[^>]*>/gi, '')          // <EOM:pause=1000 speed=normal>
+      .replace(/<EOM::[^>]*>/gi, '')         // <EOM::pause=1000 speed=normal>
+      .replace(/<EOM[^>]*>/gi, '')           // <EOM anything>
+      .replace(/\[EOM::[^\]]*\]/gi, '')      // [EOM::anything]
+      .replace(/\[EOM:[^\]]*\]/gi, '')       // [EOM:anything]
+      .replace(/\[EOM[^\]]*\]/gi, '')        // [EOM anything]
+      .replace(/\[emotion:\s*[^\]]+\]/gi, '') // [emotion: word]
+      .replace(/\beom::[^\s\n]*/gi, '')      // eom::standalone
+      .replace(/\beom:[^\s\n]*/gi, '')       // eom:standalone
+      .replace(/\{[^}]*EOM[^}]*\}/gi, '')    // {anything with EOM}
+      .replace(/EOM::[^\s\n]*/gi, '')        // EOM::standalone
+      .replace(/EOM:[^\s\n]*/gi, '')         // EOM:standalone
       .trim();
   }, []);
 
@@ -511,8 +515,8 @@ const BonnieDashboard = () => {
       const responseText = chatData?.reply || chatData?.message;
       
       if (chatData && responseText) {
-        // Parse EOM tags from Galatea engine
-        const eomMatch = responseText.match(/<EOM::([^>]+)>/);
+        // Parse EOM tags from Galatea engine (handle both : and :: formats)
+        const eomMatch = responseText.match(/<EOM:([^>]+)>/) || responseText.match(/<EOM::([^>]+)>/);
         let pauseTime = 2000;
         let speedSetting = 'normal';
         let responseEmotion = 'loving';
@@ -521,7 +525,7 @@ const BonnieDashboard = () => {
           const eomParams = eomMatch[1];
           const pauseMatch = eomParams.match(/pause=(\d+)/);
           const speedMatch = eomParams.match(/speed=(\w+)/);
-          const emotionMatch = eomParams.match(/emotion=([^,\s]+)/);
+          const emotionMatch = eomParams.match(/emotion=([^,\s&]+)/);  // Added & as delimiter
           
           if (pauseMatch) pauseTime = parseInt(pauseMatch[1]);
           if (speedMatch) speedSetting = speedMatch[1];
