@@ -516,9 +516,14 @@ const BonnieDashboard = () => {
         
         // Clean message by removing all EOM tags and any old format tags
         const cleanMessage = responseText
-          .replace(/<EOM::[^>]+>/g, '')
+          .replace(/<EOM::[^>]*>/g, '')
+          .replace(/<EOM[^>]*>/g, '')
           .replace(/\[emotion:\s*\w+\]/g, '')
+          .replace(/\[EOM[^\]]*\]/g, '')
           .trim();
+
+        console.log('🔥 Raw Response:', responseText);
+        console.log('✨ Clean Message:', cleanMessage);
 
         // Update bond score
         const bondIncrease = chatData.bondIncrease || analysisData?.bondImpact || 0.5;
