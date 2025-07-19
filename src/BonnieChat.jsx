@@ -496,6 +496,8 @@ const BonnieDashboard = () => {
         })
       });
 
+      console.log('🟢 ABOUT TO MAKE CHAT API CALL');
+      
       // Galatea EOM Heartbeat (Core Chat)
       const chatData = await makeRequest(CONSTANTS.API_ENDPOINTS.CHAT, {
         method: 'POST',
@@ -509,6 +511,10 @@ const BonnieDashboard = () => {
         })
       });
 
+      console.log('🔵 CHAT API CALL COMPLETED');
+      console.log('🔵 chatData type:', typeof chatData);
+      console.log('🔵 chatData keys:', chatData ? Object.keys(chatData) : 'null');
+      
       godLog('Galatea EOM Response', chatData);
       
       console.log('🚨 IMMEDIATE DEBUG AFTER API CALL');
