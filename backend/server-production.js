@@ -1456,7 +1456,7 @@ app.use((error, req, res, next) => {
 // 🚀 SERVER STARTUP - Production ready
 // ═══════════════════════════════════════════════════════════════════
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 10000;
 
 async function startServer() {
   try {
