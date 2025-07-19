@@ -438,6 +438,22 @@ const BonnieDashboard = () => {
   }, [bondScore, sessionId, userProfile, messages, makeRequest]);
 
   // Enhanced Message Sending (Galatea EOM + GPT-4.1)
+  // Comprehensive EOM tag cleaner function
+  const cleanEOMTags = useCallback((text) => {
+    if (!text || typeof text !== 'string') return text;
+    
+    return text
+      .replace(/<EOM::[^>]*>/gi, '')
+      .replace(/<EOM[^>]*>/gi, '')
+      .replace(/\[EOM::[^\]]*\]/gi, '')
+      .replace(/\[EOM[^\]]*\]/gi, '')
+      .replace(/\[emotion:\s*[^\]]+\]/gi, '')
+      .replace(/\beom::[^\s\n]*/gi, '')
+      .replace(/\{[^}]*EOM[^}]*\}/gi, '')
+      .replace(/EOM::[^\s\n]*/gi, '')
+      .trim();
+  }, []);
+
   const sendMessage = useCallback(async () => {
     if (!inputMessage.trim() || busy || isLoading) return;
 
@@ -514,13 +530,8 @@ const BonnieDashboard = () => {
           godLog('EOM Parsed', { pauseTime, speedSetting, responseEmotion });
         }
         
-        // Clean message by removing all EOM tags and any old format tags
-        const cleanMessage = responseText
-          .replace(/<EOM::[^>]*>/g, '')
-          .replace(/<EOM[^>]*>/g, '')
-          .replace(/\[emotion:\s*\w+\]/g, '')
-          .replace(/\[EOM[^\]]*\]/g, '')
-          .trim();
+        // Clean message using comprehensive EOM cleaner
+        const cleanMessage = cleanEOMTags(responseText);
 
         console.log('🔥 Raw Response:', responseText);
         console.log('✨ Clean Message:', cleanMessage);
@@ -614,7 +625,7 @@ const BonnieDashboard = () => {
     } finally {
       setBusy(false);
     }
-  }, [inputMessage, busy, isLoading, bondScore, sessionId, messages, userProfile, makeRequest, generateTasksWithGPT4, generateInboxWithGPT4, currentEmotionStyle]);
+  }, [inputMessage, busy, isLoading, bondScore, sessionId, messages, userProfile, makeRequest, generateTasksWithGPT4, generateInboxWithGPT4, currentEmotionStyle, cleanEOMTags]);
 
   // Profile Management Functions
   const saveProfile = useCallback(() => {
@@ -1185,7 +1196,7 @@ const BonnieDashboard = () => {
                   ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
                   : `bg-gradient-to-r ${EMOTION_SYSTEM[message.emotion]?.bubbleGradient || 'from-gray-500 to-slate-600'} text-white mr-4`
               }`}>
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">{cleanEOMTags(message.text)}</p>
                 
                 <div className="flex items-center justify-between mt-2 text-xs opacity-80">
                   <span>{message.timestamp.toLocaleTimeString()}</span>
