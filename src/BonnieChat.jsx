@@ -236,6 +236,12 @@ const BonnieDashboard = () => {
   const [adultMessageCount, setAdultMessageCount] = useState(0);
   const [showPaywall, setShowPaywall] = useState(false);
   
+  // 🎯 GENDER DETECTION FROM DOMAIN
+  const [targetGender, setTargetGender] = useState(() => {
+    const hostname = window.location.hostname;
+    return hostname.includes('trainmyman') ? 'male' : 'female';
+  });
+  
   // Check premium status on load
   useEffect(() => {
     const checkPremium = async () => {
