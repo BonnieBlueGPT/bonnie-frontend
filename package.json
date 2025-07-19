@@ -11,7 +11,10 @@
   },
   "dependencies": {
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "lucide-react": "^0.263.1",
+    "framer-motion": "^10.16.4",
+    "axios": "^1.6.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.15",
@@ -22,7 +25,10 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.3",
     "terser": "^5.43.1",
-    "vite": "^7.0.5"
+    "vite": "^7.0.5",
+    "tailwindcss": "^3.3.6",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32"
   },
   "engines": {
     "node": ">=18.0.0"
