@@ -517,13 +517,14 @@ const BonnieDashboard = () => {
       
       godLog('Galatea EOM Response', chatData);
       
-      console.log('🚨 IMMEDIATE DEBUG AFTER API CALL');
-      console.log('🚨 chatData exists?', !!chatData);
-      console.log('🚨 chatData.reply:', chatData?.reply);
-      console.log('🚨 chatData.message:', chatData?.message);
+      try {
+        console.log('🚨 IMMEDIATE DEBUG AFTER API CALL');
+        console.log('🚨 chatData exists?', !!chatData);
+        console.log('🚨 chatData.reply:', chatData?.reply);
+        console.log('🚨 chatData.message:', chatData?.message);
 
-      // Handle both chatData.reply and chatData.message formats
-      const responseText = chatData?.reply || chatData?.message;
+        // Handle both chatData.reply and chatData.message formats
+        const responseText = chatData?.reply || chatData?.message;
       
       console.log('🔧 DEBUG chatData:', chatData);
       console.log('🔧 DEBUG responseText:', responseText);
@@ -633,6 +634,11 @@ const BonnieDashboard = () => {
           setMessages(prev => [...prev, aiMessage]);
           setIsTyping(false);
         }, typingDelay);
+      }
+      
+      } catch (eomError) {
+        console.error('🔥 EOM PROCESSING ERROR:', eomError);
+        console.error('🔥 Stack trace:', eomError.stack);
       }
 
     } catch (err) {
