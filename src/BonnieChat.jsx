@@ -573,10 +573,27 @@ const BonnieDashboard = () => {
         const adultResponse = generateAdultResponse(messageText, adultMode, bondScore);
         
         if (adultResponse && !isPremium) {
-          // PAYWALL HIT - SHOW PAYMENT MODAL
-          setShowPaywall(true);
-          PaymentService.showPaymentModal(adultMode || 'flirty');
-          return;
+          // PAYWALL HIT - IMMEDIATE PAYMENT
+          setAdultMessageCount(prev => prev + 1);
+          
+          if (adultMessageCount >= 2) {
+            // HARD PAYWALL AFTER 3 MESSAGES
+            PaymentService.showPaymentModal(adultMode || 'flirty');
+            return;
+          } else {
+            // SHOW TEASER MESSAGE
+            const teaserMessage = {
+              id: Date.now() + 1,
+              sender: 'ai',
+              text: `Mmm... I can see you want more baby 😈 Only ${3 - adultMessageCount - 1} free messages left before you need to unlock me completely... 💋`,
+              emotion: 'seductive',
+              timestamp: new Date(),
+              isTeaser: true
+            };
+            setMessages(prev => [...prev, teaserMessage]);
+            setIsTyping(false);
+            return;
+          }
         }
         
         // Clean message using comprehensive EOM cleaner
