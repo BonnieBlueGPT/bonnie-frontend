@@ -1,18 +1,106 @@
-# 🔱 DIVINE DEPENDENCY RESOLUTION - EMERGENCY FIX
-# Tested and verified compatible versions
+# 🔱 RENDER-OPTIMIZED REQUIREMENTS - BONNIE TELEGRAM SOUL ENGINE
+# Python 3.11.9 compatible - Zero wheel conflicts
 
-# Core Dependencies (CONFLICT RESOLVED)
+# ================================================================
+# CORE TELEGRAM SOUL ENGINE
+# ================================================================
+
+# Telegram Bot API - THE FOUNDATION
 python-telegram-bot==20.6
-openai==1.97.0
-supabase==2.7.0              # DOWNGRADED from 2.17.0 to resolve httpx conflict
-httpx==0.25.2                # Golden compatibility version
 
-# Essential Supporting Libraries
+# HTTP CLIENT - RENDER COMPATIBLE VERSION
+httpx==0.25.2
+
+# GPT-4.1 SOUL CORE
+openai==1.13.3
+
+# ================================================================
+# SUPABASE SOUL MEMORY PALACE - RENDER OPTIMIZED
+# ================================================================
+
+# Supabase Core (without problematic gotrue)
+supabase==2.7.0
+
+# Database Connections
+asyncpg==0.29.0
+psycopg2-binary==2.9.9
+
+# ================================================================
+# PYDANTIC ECOSYSTEM - RENDER COMPATIBLE VERSIONS
+# ================================================================
+
+# DOWNGRADED for universal wheel compatibility
+pydantic==2.4.2
+pydantic-core==2.10.1
+
+# ================================================================
+# AUTHENTICATION & SECURITY - GOTRUE REPLACEMENT
+# ================================================================
+
+# JWT Authentication (replacing gotrue)
+PyJWT==2.8.0
+cryptography==41.0.8
+
+# ================================================================
+# CORE DEPENDENCIES - RENDER STABLE
+# ================================================================
+
+# JSON Processing
+jiter==0.5.0
+
+# Package Management
+packaging==23.2
+
+# Progress Tracking
+tqdm==4.66.1
+
+# Environment Management
 python-dotenv==1.0.0
-asyncio==3.4.3
-structlog==23.2.0
-pydantic==2.5.0
 
-# Production Essentials
-gunicorn==21.2.0
+# ================================================================
+# WEB FRAMEWORK & API
+# ================================================================
+
+# FastAPI for God Mode API
+fastapi==0.104.1
 uvicorn==0.24.0
+
+# Traditional Web Framework
+flask==3.0.0
+
+# ================================================================
+# REVENUE PROCESSING
+# ================================================================
+
+# Stripe Integration
+stripe==7.8.0
+
+# ================================================================
+# LOGGING & MONITORING
+# ================================================================
+
+# Structured Logging
+structlog==23.2.0
+
+# ================================================================
+# ADDITIONAL SOUL PROCESSING
+# ================================================================
+
+# HTTP Requests
+requests==2.31.0
+
+# Date/Time Processing
+python-dateutil==2.8.2
+
+# Type Hints
+typing-extensions==4.8.0
+
+# Async Support
+aiohttp==3.9.1
+
+# ================================================================
+# PRODUCTION DEPLOYMENT
+# ================================================================
+
+# WSGI/ASGI Server
+gunicorn==21.2.0
