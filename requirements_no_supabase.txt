@@ -1,0 +1,21 @@
+# 🔱 DIVINE FALLBACK SOLUTION - NO SUPABASE CONFLICTS
+# This completely eliminates the httpx version conflict
+
+# Core Dependencies (ZERO CONFLICTS)
+python-telegram-bot==20.6      # httpx>=0.25.0,<0.26
+openai==1.97.0                 # httpx>=0.23.0,<1.0
+httpx==0.25.2                  # Perfect compatibility
+
+# Database (Direct PostgreSQL - NO SUPABASE)
+asyncpg==0.29.0                # Direct async PostgreSQL driver
+sqlalchemy==2.0.23             # ORM for complex queries
+psycopg2-binary==2.9.9         # Backup PostgreSQL driver
+
+# Essential Libraries
+python-dotenv==1.0.0
+structlog==23.2.0
+pydantic==2.5.0
+
+# Production Essentials
+gunicorn==21.2.0
+uvicorn==0.24.0

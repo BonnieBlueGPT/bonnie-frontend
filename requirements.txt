@@ -1,39 +1,18 @@
-# 🔱 DIVINE DEPENDENCY RESOLUTION - TELEGRAM BOT PRODUCTION
-# Tested and verified compatible versions that resolve httpx conflicts
+# 🔱 DIVINE DEPENDENCY RESOLUTION - EMERGENCY FIX
+# Tested and verified compatible versions
 
-# Core Telegram Bot Framework
-python-telegram-bot==20.6  # Requires httpx>=0.25.0,<0.26
+# Core Dependencies (CONFLICT RESOLVED)
+python-telegram-bot==20.6
+openai==1.97.0
+supabase==2.7.0              # DOWNGRADED from 2.17.0 to resolve httpx conflict
+httpx==0.25.2                # Golden compatibility version
 
-# OpenAI Integration
-openai==1.97.0             # Requires httpx>=0.23.0,<1.0
-
-# Supabase Database (DOWNGRADED to resolve httpx conflict)
-supabase==2.7.0            # Compatible with httpx 0.25.x
-
-# HTTP Client (LOCKED to compatible version)
-httpx==0.25.2              # Sweet spot that satisfies all three
-
-# Supporting Dependencies
-python-dotenv==1.0.0       # Environment variables
-asyncio==3.4.3             # Async support
-uvloop==0.19.0             # Performance boost
-aiofiles==23.2.1           # Async file operations
+# Essential Supporting Libraries
+python-dotenv==1.0.0
+asyncio==3.4.3
+structlog==23.2.0
+pydantic==2.5.0
 
 # Production Essentials
-gunicorn==21.2.0           # WSGI server
-uvicorn==0.24.0            # ASGI server
-fastapi==0.104.1           # API framework (if needed)
-
-# Monitoring & Logging
-structlog==23.2.0          # Structured logging
-sentry-sdk==1.38.0         # Error tracking
-
-# Security & Validation
-pydantic==2.5.0            # Data validation
-cryptography==41.0.7       # Security utilities
-
-# Development & Testing (comment out for production)
-# pytest==7.4.3
-# pytest-asyncio==0.21.1
-# black==23.11.0
-# flake8==6.1.0
+gunicorn==21.2.0
+uvicorn==0.24.0
