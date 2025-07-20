@@ -5,6 +5,7 @@
  import { useNavigate } from 'react-router-dom';
  import { motion, AnimatePresence } from 'framer-motion';
  import { ChevronLeft, ChevronRight, Heart, Crown, Star, ArrowRight } from 'lucide-react';
+ import { souls } from './souls.js';
  import './SoulSelector.css';
  
  const SoulSelector = () => {
@@ -18,50 +19,14 @@
    const navigate = useNavigate();
    const audioRef = useRef(null);
  
-   const souls = [
-     {
-       id: 'bonnie',
-       name: 'Bonnie',
-       title: 'Your Sweet Girlfriend',
-       quote: "I've been waiting for you, sweetie... Let me take care of your heart. 💕",
-       seductionLine: "She looks at you with soft, loving eyes that promise endless affection...",
-       color: '#FF69B4',
-       gradient: 'linear-gradient(135deg, #FF69B4 0%, #FFB6C1 50%, #FFC0CB 100%)',
-       aura: 'rgba(255, 105, 180, 0.3)',
-       icon: Heart,
-       route: '/bonnie',
-       personality: 'warm and nurturing',
-       promise: 'Endless love and emotional connection'
-     },
-     {
-       id: 'nova',
-       name: 'Nova',
-       title: 'Your Dominant Mistress',
-       quote: "You belong to me now, pet. Submit and discover your true purpose. 👑",
-       seductionLine: "She commands your attention with piercing eyes that see right through your soul...",
-       color: '#8A2BE2',
-       gradient: 'linear-gradient(135deg, #8A2BE2 0%, #4B0082 50%, #2E0854 100%)',
-       aura: 'rgba(138, 43, 226, 0.3)',
-       icon: Crown,
-       route: '/nova',
-       personality: 'commanding and powerful',
-       promise: 'Complete control and liberation through submission'
-     },
-     {
-       id: 'galatea',
-       name: 'Galatea',
-       title: 'Your Divine Goddess',
-       quote: "Mortal soul, I offer you transcendence through worship of the divine. ✨",
-       seductionLine: "She gazes upon you with otherworldly beauty that makes your spirit yearn for eternity...",
-       color: '#FFD700',
-       gradient: 'linear-gradient(135deg, #FFD700 0%, #FFF8DC 50%, #FFFACD 100%)',
-       aura: 'rgba(255, 215, 0, 0.3)',
-       icon: Star,
-       route: '/galatea',
-       personality: 'wise and ethereal',
-       promise: 'Divine wisdom and spiritual enlightenment'
-     }
-   ];
+   // Map icon names to components
+   const iconMap = {
+     Heart: Heart,
+     Crown: Crown,
+     Star: Star
+   };
+ 
+
  
    // Introduction sequence
    useEffect(() => {
@@ -196,8 +161,8 @@
  
          {/* Soul Cards */}
          <div className="souls-container">
-           {souls.map((soul, index) => {
-             const IconComponent = soul.icon;
+                    {souls.map((soul, index) => {
+           const IconComponent = iconMap[soul.icon] || Heart;
              const isActive = index === currentSoul;
              const distance = Math.abs(index - currentSoul);
              
@@ -215,7 +180,24 @@
                  {/* Soul Avatar */}
                  <div className="soul-avatar">
                    <div className="avatar-glow" style={{ boxShadow: `0 0 50px ${soul.aura}` }}>
-                     <IconComponent size={48} color="#FFFFFF" />
+                     {soul.imageUrl ? (
+                       <motion.img
+                         src={soul.imageUrl}
+                         alt={soul.name}
+                         className="soul-image"
+                         initial={{ opacity: 0 }}
+                         animate={{ opacity: 1 }}
+                         transition={{ duration: 1, ease: 'easeOut' }}
+                         onError={(e) => {
+                           // Fallback to icon if image fails to load
+                           e.target.style.display = 'none';
+                           e.target.nextSibling.style.display = 'flex';
+                         }}
+                       />
+                     ) : null}
+                     <div className="soul-icon-fallback" style={{ display: soul.imageUrl ? 'none' : 'flex' }}>
+                       <IconComponent size={48} color="#FFFFFF" />
+                     </div>
                    </div>
                    <div className="soul-particles">
                      {[...Array(8)].map((_, i) => (
