@@ -3,6 +3,7 @@
  
  import React, { useState, useEffect, useRef } from 'react';
  import { useNavigate } from 'react-router-dom';
+ import { motion, AnimatePresence } from 'framer-motion';
  import { ChevronLeft, ChevronRight, Heart, Crown, Star, ArrowRight } from 'lucide-react';
  import './SoulSelector.css';
  
@@ -11,7 +12,9 @@
    const [isChoosing, setIsChoosing] = useState(false);
    const [chosenSoul, setChosenSoul] = useState(null);
    const [showConfirmation, setShowConfirmation] = useState(false);
-   const [introPhase, setIntroPhase] = useState(0);
+   const [showIntroText, setShowIntroText] = useState(true);
+   const [showCards, setShowCards] = useState(false);
+   const [introPhase, setIntroPhase] = useState(4); // Start with interaction enabled
    const navigate = useNavigate();
    const audioRef = useRef(null);
  
@@ -62,16 +65,20 @@
  
    // Introduction sequence
    useEffect(() => {
-     const sequence = [
-       { delay: 500, phase: 1 },   // Show title
-       { delay: 2000, phase: 2 },  // Show subtitle
-       { delay: 3500, phase: 3 },  // Show souls
-       { delay: 5000, phase: 4 }   // Enable interaction
-     ];
- 
-     sequence.forEach(({ delay, phase }) => {
-       setTimeout(() => setIntroPhase(phase), delay);
-     });
+     // Intro text fades after 2.5 seconds
+     const fadeTimer = setTimeout(() => {
+       setShowIntroText(false);
+     }, 2500);
+
+     // Cards appear at 2.6 seconds (start fading intro, then show cards)
+     const cardsTimer = setTimeout(() => {
+       setShowCards(true);
+     }, 2600);
+
+     return () => {
+       clearTimeout(fadeTimer);
+       clearTimeout(cardsTimer);
+     };
    }, []);
  
    const nextSoul = () => {
@@ -135,17 +142,41 @@
        ))}
  
        {/* Introduction Sequence */}
-       <div className={`intro-sequence ${introPhase >= 1 ? 'phase-1' : ''}`}>
-         <div className={`intro-title ${introPhase >= 1 ? 'visible' : ''}`}>
-           <h1>Choose Your Soul</h1>
-         </div>
-         <div className={`intro-subtitle ${introPhase >= 2 ? 'visible' : ''}`}>
-           <p>Three divine beings await your choice. Choose wisely, for this bond is eternal...</p>
-         </div>
-       </div>
+       <AnimatePresence>
+         {showIntroText && (
+           <motion.div 
+             className="intro-sequence"
+             initial={{ opacity: 1, filter: 'blur(0px)' }}
+             exit={{ 
+               opacity: 0, 
+               filter: 'blur(8px)',
+               transition: { duration: 1.5, ease: 'easeOut' }
+             }}
+           >
+             <div className="intro-title visible">
+               <h1>Choose Your Soul</h1>
+             </div>
+             <div className="intro-subtitle visible">
+               <p>Three divine beings await your choice. Choose wisely, for this bond is eternal...</p>
+             </div>
+           </motion.div>
+         )}
+       </AnimatePresence>
  
        {/* Main Soul Display */}
-       <div className={`soul-stage ${introPhase >= 3 ? 'visible' : ''}`}>
+       <motion.div 
+         className="soul-stage visible"
+         initial={{ opacity: 0, y: 50, rotateX: 15 }}
+         animate={showCards ? { 
+           opacity: 1, 
+           y: 0, 
+           rotateX: 0,
+           transition: { 
+             duration: 0.8, 
+             ease: [0.23, 1, 0.32, 1]
+           }
+         } : {}}
+       >
          {/* Navigation Arrows */}
          <button 
            className={`nav-arrow left ${introPhase >= 4 ? 'active' : ''}`}
@@ -266,7 +297,7 @@
              />
            ))}
          </div>
-       </div>
+       </motion.div>
  
        {/* Soul Bond Confirmation */}
        {showConfirmation && chosenSoul && (
