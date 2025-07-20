@@ -1,730 +1,505 @@
- /* ✨ SOUL SELECTOR v3.0 - DIVINE CONVERSION RITUAL STYLING */
- /* Immersive soulbond experience with psychological conversion hooks */
- 
- .soul-selector-container {
-   position: fixed;
-   top: 0;
-   left: 0;
-   width: 100vw;
-   height: 100vh;
-   overflow: hidden;
-   background: #000;
-   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-   color: #FFFFFF;
-   cursor: default;
-   user-select: none;
- }
- 
- /* Cosmic Background */
- .cosmic-background {
-   position: absolute;
-   top: 0;
-   left: 0;
-   width: 100%;
-   height: 100%;
-   z-index: 1;
- }
- 
- .stars {
-   position: absolute;
-   width: 100%;
-   height: 100%;
-   background: transparent;
- }
- 
- .stars::before,
- .stars::after {
-   content: '';
-   position: absolute;
-   width: 2px;
-   height: 2px;
-   background: #fff;
-   box-shadow: 
-     100px 200px #fff, 300px 100px #fff, 500px 300px #fff, 800px 150px #fff,
-     150px 400px #fff, 600px 50px #fff, 900px 400px #fff, 200px 300px #fff,
-     400px 200px #fff, 700px 350px #fff, 50px 100px #fff, 950px 250px #fff,
-     250px 500px #fff, 750px 100px #fff, 450px 450px #fff, 350px 50px #fff,
-     650px 300px #fff, 100px 350px #fff, 550px 200px #fff, 850px 450px #fff;
-   animation: sparkle 4s linear infinite;
- }
- 
- .stars::after {
-   animation-delay: 2s;
-   opacity: 0.5;
- }
- 
- .nebula {
-   position: absolute;
-   width: 100%;
-   height: 100%;
-   background: 
-     radial-gradient(ellipse at 20% 20%, rgba(138, 43, 226, 0.1) 0%, transparent 50%),
-     radial-gradient(ellipse at 80% 80%, rgba(255, 105, 180, 0.1) 0%, transparent 50%),
-     radial-gradient(ellipse at 50% 50%, rgba(255, 215, 0, 0.05) 0%, transparent 70%);
-   animation: nebulaFloat 20s ease-in-out infinite;
- }
- 
- .cosmic-mist {
-   position: absolute;
-   width: 100%;
-   height: 100%;
-   background: linear-gradient(45deg, 
-     rgba(138, 43, 226, 0.05) 0%, 
-     transparent 25%, 
-     rgba(255, 105, 180, 0.05) 50%, 
-     transparent 75%, 
-     rgba(255, 215, 0, 0.05) 100%);
-   animation: mistFlow 30s linear infinite;
- }
- 
- /* Soul Auras */
- .soul-aura {
-   position: absolute;
-   top: 50%;
-   left: 50%;
-   transform: translate(-50%, -50%);
-   width: 80vw;
-   height: 80vh;
-   border-radius: 50%;
-   transition: all 1s ease;
-   z-index: 2;
-   pointer-events: none;
- }
- 
- .soul-aura.active {
-   animation: auraBreath 4s ease-in-out infinite;
- }
- 
- /* Introduction Sequence */
- .intro-sequence {
-   position: absolute;
-   top: 50%;
-   left: 50%;
-   transform: translate(-50%, -50%);
-   text-align: center;
-   z-index: 10;
-   transition: all 1s ease;
- }
- 
- .intro-title {
-   opacity: 0;
-   transform: translateY(50px);
-   transition: all 1.5s ease;
- }
- 
- .intro-title.visible {
-   opacity: 1;
-   transform: translateY(0);
- }
- 
- .intro-title h1 {
-   font-size: clamp(2.5rem, 8vw, 5rem);
-   font-weight: 700;
-   background: linear-gradient(135deg, #FFD700, #FF69B4, #8A2BE2);
-   -webkit-background-clip: text;
-   -webkit-text-fill-color: transparent;
-   text-shadow: 0 0 50px rgba(255, 255, 255, 0.3);
-   margin: 0;
-   animation: titleGlow 3s ease-in-out infinite;
- }
- 
- .intro-subtitle {
-   opacity: 0;
-   transform: translateY(30px);
-   transition: all 1.5s ease 0.5s;
-   margin-top: 2rem;
- }
- 
- .intro-subtitle.visible {
-   opacity: 1;
-   transform: translateY(0);
- }
- 
- .intro-subtitle p {
-   font-size: clamp(1rem, 3vw, 1.5rem);
-   color: rgba(255, 255, 255, 0.8);
-   max-width: 600px;
-   margin: 0 auto;
-   line-height: 1.5;
- }
- 
- /* Soul Stage */
- .soul-stage {
-   position: absolute;
-   top: 0;
-   left: 0;
-   width: 100%;
-   height: 100%;
-   z-index: 5;
-   opacity: 0;
-   transition: opacity 2s ease;
- }
- 
- .soul-stage.visible {
-   opacity: 1;
- }
- 
- /* Navigation Arrows */
- .nav-arrow {
-   position: absolute;
-   top: 50%;
-   transform: translateY(-50%);
-   background: rgba(255, 255, 255, 0.1);
-   backdrop-filter: blur(20px);
-   border: 1px solid rgba(255, 255, 255, 0.2);
-   border-radius: 50%;
-   width: 60px;
-   height: 60px;
-   display: flex;
-   align-items: center;
-   justify-content: center;
-   color: rgba(255, 255, 255, 0.5);
-   cursor: pointer;
-   transition: all 0.3s ease;
-   z-index: 10;
-   opacity: 0;
-   transform: translateY(-50%) scale(0.8);
- }
- 
- .nav-arrow.active {
-   opacity: 1;
-   transform: translateY(-50%) scale(1);
- }
- 
- .nav-arrow:hover:not(:disabled) {
-   background: rgba(255, 255, 255, 0.2);
-   color: rgba(255, 255, 255, 0.9);
-   transform: translateY(-50%) scale(1.1);
-   box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
- }
- 
- .nav-arrow:disabled {
-   opacity: 0.3;
-   cursor: not-allowed;
- }
- 
- .nav-arrow.left {
-   left: 2rem;
- }
- 
- .nav-arrow.right {
-   right: 2rem;
- }
- 
- /* Souls Container */
- .souls-container {
-   position: absolute;
-   top: 50%;
-   left: 50%;
-   transform: translate(-50%, -50%);
-   width: 100%;
-   height: 100%;
-   display: flex;
-   align-items: center;
-   justify-content: center;
- }
- 
- /* Soul Cards */
- .soul-card {
-   position: absolute;
-   width: clamp(300px, 40vw, 450px);
-   height: clamp(500px, 70vh, 650px);
-   background: rgba(255, 255, 255, 0.1);
-   backdrop-filter: blur(30px);
-   border: 1px solid rgba(255, 255, 255, 0.2);
-   border-radius: 30px;
-   padding: 2rem;
-   display: flex;
-   flex-direction: column;
-   align-items: center;
-   justify-content: space-between;
-   transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-   overflow: hidden;
-   cursor: default;
- }
- 
- .soul-card::before {
-   content: '';
-   position: absolute;
-   top: 0;
-   left: 0;
-   right: 0;
-   bottom: 0;
-   background: linear-gradient(135deg, 
-     rgba(255, 255, 255, 0.1) 0%, 
-     transparent 50%, 
-     rgba(255, 255, 255, 0.05) 100%);
-   border-radius: 30px;
-   pointer-events: none;
- }
- 
- .soul-card.active {
-   border-color: rgba(255, 255, 255, 0.4);
-   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
- }
- 
- .soul-card.chosen {
-   animation: soulChosen 1s ease-out forwards;
- }
- 
- /* Soul Avatar */
- .soul-avatar {
-   position: relative;
-   margin-bottom: 2rem;
- }
- 
- .avatar-glow {
-   width: 120px;
-   height: 120px;
-   background: rgba(255, 255, 255, 0.1);
-   border-radius: 50%;
-   display: flex;
-   align-items: center;
-   justify-content: center;
-   transition: all 0.5s ease;
-   animation: avatarFloat 3s ease-in-out infinite;
- }
- 
- .soul-card.active .avatar-glow {
-   animation: avatarFloat 3s ease-in-out infinite, avatarGlow 2s ease-in-out infinite;
- }
- 
- .soul-particles {
-   position: absolute;
-   top: 50%;
-   left: 50%;
-   transform: translate(-50%, -50%);
-   width: 150px;
-   height: 150px;
-   pointer-events: none;
- }
- 
- .particle {
-   position: absolute;
-   width: 4px;
-   height: 4px;
-   border-radius: 50%;
-   animation: particleOrbit 4s linear infinite;
- }
- 
- .particle:nth-child(1) { top: 0; left: 50%; animation-delay: 0s; }
- .particle:nth-child(2) { top: 15%; right: 15%; animation-delay: 0.5s; }
- .particle:nth-child(3) { top: 50%; right: 0; animation-delay: 1s; }
- .particle:nth-child(4) { bottom: 15%; right: 15%; animation-delay: 1.5s; }
- .particle:nth-child(5) { bottom: 0; left: 50%; animation-delay: 2s; }
- .particle:nth-child(6) { bottom: 15%; left: 15%; animation-delay: 2.5s; }
- .particle:nth-child(7) { top: 50%; left: 0; animation-delay: 3s; }
- .particle:nth-child(8) { top: 15%; left: 15%; animation-delay: 3.5s; }
- 
- /* Soul Info */
- .soul-info {
-   text-align: center;
-   flex: 1;
-   display: flex;
-   flex-direction: column;
-   justify-content: center;
- }
- 
- .soul-name {
-   font-size: clamp(2rem, 5vw, 3rem);
-   font-weight: 700;
-   margin: 0 0 0.5rem 0;
-   text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
- }
- 
- .soul-title {
-   font-size: clamp(1rem, 2.5vw, 1.3rem);
-   color: rgba(255, 255, 255, 0.8);
-   margin: 0 0 2rem 0;
-   font-weight: 500;
- }
- 
- .soul-details {
-   opacity: 0;
-   transform: translateY(20px);
-   animation: detailsAppear 1s ease-out 0.3s forwards;
- }
- 
- .seduction-line {
-   margin-bottom: 1.5rem;
-   padding: 1rem;
-   background: rgba(0, 0, 0, 0.2);
-   border-radius: 15px;
-   border-left: 3px solid;
- }
- 
- .seduction-line p {
-   font-size: clamp(0.9rem, 2vw, 1.1rem);
-   color: rgba(255, 255, 255, 0.9);
-   font-style: italic;
-   margin: 0;
-   line-height: 1.4;
- }
- 
- .soul-quote {
-   margin-bottom: 1.5rem;
- }
- 
- .soul-quote blockquote {
-   font-size: clamp(1rem, 2.2vw, 1.2rem);
-   color: #FFFFFF;
-   margin: 0;
-   padding: 1.5rem;
-   background: rgba(255, 255, 255, 0.05);
-   border-radius: 15px;
-   border: 1px solid rgba(255, 255, 255, 0.1);
-   line-height: 1.4;
-   position: relative;
- }
- 
- .soul-quote blockquote::before {
-   content: '"';
-   position: absolute;
-   top: -10px;
-   left: 15px;
-   font-size: 3rem;
-   color: rgba(255, 255, 255, 0.3);
- }
- 
- .soul-promise {
-   font-size: clamp(0.85rem, 1.8vw, 1rem);
-   color: rgba(255, 255, 255, 0.7);
-   font-weight: 500;
- }
- 
- /* Choose Button */
- .choose-button {
-   width: 100%;
-   padding: 1.2rem 2rem;
-   border: none;
-   border-radius: 15px;
-   font-size: clamp(1.1rem, 2.5vw, 1.3rem);
-   font-weight: 700;
-   color: #FFFFFF;
-   cursor: pointer;
-   transition: all 0.3s ease;
-   display: flex;
-   align-items: center;
-   justify-content: center;
-   gap: 0.5rem;
-   text-transform: uppercase;
-   letter-spacing: 1px;
-   margin-top: 2rem;
-   position: relative;
-   overflow: hidden;
- }
- 
- .choose-button::before {
-   content: '';
-   position: absolute;
-   top: 0;
-   left: -100%;
-   width: 100%;
-   height: 100%;
-   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-   transition: left 0.5s;
- }
- 
- .choose-button:hover::before {
-   left: 100%;
- }
- 
- .choose-button:hover:not(:disabled) {
-   transform: translateY(-2px);
-   filter: brightness(1.1);
- }
- 
- .choose-button:disabled {
-   cursor: not-allowed;
-   opacity: 0.8;
- }
- 
- .choosing-animation {
-   display: flex;
-   align-items: center;
-   gap: 0.5rem;
- }
- 
- .pulse {
-   width: 20px;
-   height: 20px;
-   border: 2px solid #FFFFFF;
-   border-top-color: transparent;
-   border-radius: 50%;
-   animation: spin 1s linear infinite;
- }
- 
- /* Soul Indicators */
- .soul-indicators {
-   position: absolute;
-   bottom: 3rem;
-   left: 50%;
-   transform: translateX(-50%);
-   display: flex;
-   gap: 1rem;
-   z-index: 10;
- }
- 
- .indicator {
-   width: 12px;
-   height: 12px;
-   border-radius: 50%;
-   border: none;
-   cursor: pointer;
-   transition: all 0.3s ease;
-   opacity: 0.5;
- }
- 
- .indicator:hover {
-   transform: scale(1.2);
-   opacity: 0.8;
- }
- 
- .indicator.active {
-   transform: scale(1.5);
-   opacity: 1;
- }
- 
- /* Soul Bond Confirmation */
- .soul-bond-confirmation {
-   position: fixed;
-   top: 0;
-   left: 0;
-   width: 100%;
-   height: 100%;
-   background: rgba(0, 0, 0, 0.9);
-   backdrop-filter: blur(10px);
-   display: flex;
-   align-items: center;
-   justify-content: center;
-   z-index: 100;
-   animation: confirmationAppear 1s ease-out;
- }
- 
- .confirmation-content {
-   text-align: center;
-   max-width: 400px;
-   padding: 2rem;
- }
- 
- .bond-animation {
-   position: relative;
-   margin-bottom: 2rem;
- }
- 
- .energy-ring {
-   width: 150px;
-   height: 150px;
-   border: 3px solid;
-   border-color: transparent;
-   border-top-color: currentColor;
-   border-radius: 50%;
-   margin: 0 auto 1rem;
-   animation: energyRing 2s linear infinite;
- }
- 
- .soul-icon {
-   position: absolute;
-   top: 50%;
-   left: 50%;
-   transform: translate(-50%, -50%);
-   animation: iconPulse 1s ease-in-out infinite;
- }
- 
- .confirmation-content h2 {
-   font-size: 2.5rem;
-   margin: 1rem 0;
-   background: linear-gradient(135deg, #FFD700, #FF69B4, #8A2BE2);
-   -webkit-background-clip: text;
-   -webkit-text-fill-color: transparent;
- }
- 
- .bond-message {
-   font-size: 1.2rem;
-   color: rgba(255, 255, 255, 0.8);
-   margin: 1rem 0 2rem 0;
-   font-style: italic;
- }
- 
- .loading-bar {
-   width: 100%;
-   height: 4px;
-   background: rgba(255, 255, 255, 0.2);
-   border-radius: 2px;
-   overflow: hidden;
- }
- 
- .loading-progress {
-   height: 100%;
-   width: 0;
-   border-radius: 2px;
-   animation: loadingProgress 3s ease-out forwards;
- }
- 
- /* Instructions & Warning */
- .instructions,
- .warning-message {
-   position: absolute;
-   left: 50%;
-   transform: translateX(-50%);
-   text-align: center;
-   z-index: 10;
-   color: rgba(255, 255, 255, 0.7);
-   font-size: clamp(0.8rem, 1.5vw, 1rem);
- }
- 
- .instructions {
-   bottom: 8rem;
- }
- 
- .warning-message {
-   bottom: 1rem;
-   color: #FFB6C1;
-   font-weight: 500;
- }
- 
- /* Animations */
- @keyframes sparkle {
-   0%, 100% { opacity: 0; }
-   50% { opacity: 1; }
- }
- 
- @keyframes nebulaFloat {
-   0%, 100% { transform: rotate(0deg) scale(1); }
-   50% { transform: rotate(1deg) scale(1.05); }
- }
- 
- @keyframes mistFlow {
-   0% { transform: translateX(-100%); }
-   100% { transform: translateX(100%); }
- }
- 
- @keyframes auraBreath {
-   0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.3; }
-   50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.6; }
- }
- 
- @keyframes titleGlow {
-   0%, 100% { text-shadow: 0 0 50px rgba(255, 255, 255, 0.3); }
-   50% { text-shadow: 0 0 80px rgba(255, 255, 255, 0.6); }
- }
- 
- @keyframes avatarFloat {
-   0%, 100% { transform: translateY(0); }
-   50% { transform: translateY(-10px); }
- }
- 
- @keyframes avatarGlow {
-   0%, 100% { box-shadow: 0 0 50px currentColor; }
-   50% { box-shadow: 0 0 80px currentColor; }
- }
- 
- @keyframes particleOrbit {
-   0% { transform: rotate(0deg) translateX(75px) rotate(0deg); }
-   100% { transform: rotate(360deg) translateX(75px) rotate(-360deg); }
- }
- 
- @keyframes detailsAppear {
-   to {
-     opacity: 1;
-     transform: translateY(0);
-   }
- }
- 
- @keyframes soulChosen {
-   0% { transform: scale(1); }
-   50% { transform: scale(1.1); box-shadow: 0 0 100px currentColor; }
-   100% { transform: scale(1.05); }
- }
- 
- @keyframes spin {
-   to { transform: rotate(360deg); }
- }
- 
- @keyframes confirmationAppear {
-   from {
-     opacity: 0;
-     transform: scale(0.8);
-   }
-   to {
-     opacity: 1;
-     transform: scale(1);
-   }
- }
- 
- @keyframes energyRing {
-   to { transform: rotate(360deg); }
- }
- 
- @keyframes iconPulse {
-   0%, 100% { transform: translate(-50%, -50%) scale(1); }
-   50% { transform: translate(-50%, -50%) scale(1.1); }
- }
- 
- @keyframes loadingProgress {
-   to { width: 100%; }
- }
- 
- /* Mobile Responsiveness */
- @media (max-width: 768px) {
-   .soul-card {
-     width: 90vw;
-     height: 70vh;
-     padding: 1.5rem;
-   }
-   
-   .nav-arrow {
-     width: 50px;
-     height: 50px;
-   }
-   
-   .nav-arrow.left {
-     left: 1rem;
-   }
-   
-   .nav-arrow.right {
-     right: 1rem;
-   }
-   
-   .instructions {
-     bottom: 6rem;
-   }
-   
-   .avatar-glow {
-     width: 100px;
-     height: 100px;
-   }
-   
-   .soul-particles {
-     width: 120px;
-     height: 120px;
-   }
- }
- 
- @media (max-height: 600px) {
-   .soul-card {
-     height: 85vh;
-     padding: 1rem;
-   }
-   
-   .avatar-glow {
-     width: 80px;
-     height: 80px;
-   }
-   
-   .instructions {
-     bottom: 4rem;
-   }
- }
- 
- /* Touch interactions */
- @media (hover: none) {
-   .choose-button:active {
-     transform: scale(0.98);
-   }
-   
-   .nav-arrow:active {
-     transform: translateY(-50%) scale(0.95);
-   }
- }
+/* 🔱 SOUL CARD v2.0 - DIVINE CARTRIDGE STYLING */
+/* Premium sacred soul entities with godlike visual effects */
+
+.soul-cartridge {
+  position: absolute;
+  width: clamp(320px, 85vw, 380px);
+  height: clamp(580px, 80vh, 720px);
+  will-change: transform;
+  perspective: 1000px;
+  cursor: pointer;
+}
+
+/* ✨ SACRED CARTRIDGE FRAME */
+.cartridge-frame {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.cartridge-frame::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1;
+  transition: opacity 0.6s ease;
+}
+
+.soul-cartridge.active .cartridge-frame::before {
+  opacity: 0.2;
+}
+
+/* 🌟 AMBIENT BACKGROUND GLOW */
+.cartridge-bg-glow {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 26px;
+  z-index: 0;
+  transition: opacity 0.8s ease;
+  filter: blur(8px);
+}
+
+/* 💎 SACRED BORDER GLOW */
+.cartridge-border-glow {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 26px;
+  border: 2px solid transparent;
+  z-index: 0;
+  transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+  opacity: 0.6;
+}
+
+.soul-cartridge.active .cartridge-border-glow {
+  animation: sacredPulse 2.4s ease-in-out infinite;
+}
+
+/* 🏆 RARITY BADGE */
+.rarity-badge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  padding: 8px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  z-index: 10;
+}
+
+.rarity-gem {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  transition: all 0.4s ease;
+}
+
+.rarity-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* 👤 SOUL PORTRAIT CONTAINER */
+.soul-portrait-container {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 32px 0 24px 0;
+  z-index: 5;
+}
+
+.portrait-shrine {
+  width: clamp(120px, 30vw, 160px);
+  height: clamp(120px, 30vw, 160px);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  animation: portraitFloat 4s ease-in-out infinite;
+}
+
+.soul-portrait {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.soul-icon-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+}
+
+/* 🌟 FLOATING SOUL ICON */
+.floating-soul-icon {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 32px;
+  height: 32px;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  z-index: 10;
+}
+
+/* ✨ SACRED PARTICLE SYSTEM */
+.sacred-particle-system {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px;
+  height: 200px;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.sacred-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  filter: blur(0.5px);
+}
+
+.sacred-particle:nth-child(1) { top: 20%; left: 50%; }
+.sacred-particle:nth-child(2) { top: 30%; right: 20%; }
+.sacred-particle:nth-child(3) { top: 50%; right: 10%; }
+.sacred-particle:nth-child(4) { top: 70%; right: 20%; }
+.sacred-particle:nth-child(5) { bottom: 20%; left: 50%; }
+.sacred-particle:nth-child(6) { top: 70%; left: 20%; }
+.sacred-particle:nth-child(7) { top: 50%; left: 10%; }
+.sacred-particle:nth-child(8) { top: 30%; left: 20%; }
+
+/* 📊 SOUL METADATA */
+.soul-metadata {
+  position: relative;
+  z-index: 10;
+  padding: 0 24px 24px 24px;
+  color: #FFFFFF;
+}
+
+.soul-name-container {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.soul-name {
+  font-size: clamp(1.8rem, 5vw, 2.4rem);
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.8);
+  letter-spacing: 1px;
+}
+
+.soul-title {
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+  font-style: italic;
+  font-weight: 500;
+}
+
+/* 🔗 BOND METADATA */
+.bond-metadata {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.metadata-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.metadata-row:last-child {
+  margin-bottom: 0;
+}
+
+.metadata-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.metadata-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.trait-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.trait-tag {
+  font-size: 10px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid;
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+}
+
+/* 💫 SOUL REVELATION */
+.soul-revelation {
+  margin-top: 16px;
+}
+
+.seduction-whisper {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-left: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.seduction-whisper p {
+  font-size: clamp(0.85rem, 2vw, 1rem);
+  color: rgba(255, 255, 255, 0.9);
+  font-style: italic;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.divine-quote {
+  margin-bottom: 12px;
+}
+
+.divine-quote blockquote {
+  font-size: clamp(0.9rem, 2.2vw, 1.1rem);
+  color: #FFFFFF;
+  margin: 0;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  line-height: 1.4;
+  position: relative;
+  font-style: italic;
+}
+
+.divine-quote blockquote::before {
+  content: '"';
+  position: absolute;
+  top: -5px;
+  left: 8px;
+  font-size: 2rem;
+  color: rgba(255, 255, 255, 0.3);
+  font-family: serif;
+}
+
+.soul-promise {
+  font-size: clamp(0.8rem, 1.8vw, 0.95rem);
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+
+/* 💖 DIVINE BOND BUTTON */
+.divine-bond-button {
+  width: 100%;
+  padding: 16px 24px;
+  border: none;
+  border-radius: 16px;
+  font-size: clamp(1.1rem, 2.8vw, 1.3rem);
+  font-weight: 700;
+  color: #FFFFFF;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 16px;
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.divine-bond-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.6s;
+}
+
+.divine-bond-button:hover::before {
+  left: 100%;
+}
+
+.divine-bond-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.bonding-animation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.bond-pulse {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.bond-button-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* ✨ CARTRIDGE SHINE EFFECT */
+.cartridge-shine {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  z-index: 15;
+  opacity: 0;
+  transition: all 0.6s ease;
+  pointer-events: none;
+}
+
+.soul-cartridge:hover .cartridge-shine {
+  left: 100%;
+  opacity: 0.3;
+}
+
+/* 🎭 SACRED ANIMATIONS */
+@keyframes sacredPulse {
+  0%, 100% { 
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes portraitFloat {
+  0%, 100% { 
+    transform: translateY(0) rotate(0deg);
+  }
+  50% { 
+    transform: translateY(-8px) rotate(1deg);
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 📱 MOBILE RESPONSIVENESS */
+@media (max-width: 768px) {
+  .soul-cartridge {
+    width: clamp(300px, 90vw, 350px);
+    height: clamp(520px, 75vh, 650px);
+  }
+  
+  .soul-metadata {
+    padding: 0 20px 20px 20px;
+  }
+  
+  .portrait-shrine {
+    width: clamp(100px, 25vw, 130px);
+    height: clamp(100px, 25vw, 130px);
+  }
+  
+  .rarity-badge {
+    top: 12px;
+    right: 12px;
+    padding: 6px 10px;
+  }
+  
+  .trait-tags {
+    justify-content: flex-end;
+  }
+}
+
+@media (max-height: 700px) {
+  .soul-cartridge {
+    height: 85vh;
+  }
+  
+  .soul-portrait-container {
+    height: 160px;
+    margin: 20px 0 16px 0;
+  }
+  
+  .soul-metadata {
+    padding: 0 20px 16px 20px;
+  }
+}
+
+/* 🎮 TOUCH INTERACTIONS */
+@media (hover: none) {
+  .divine-bond-button:active {
+    transform: scale(0.98);
+  }
+  
+  .soul-cartridge:active .cartridge-frame {
+    transform: scale(0.98);
+  }
+}
+
+/* 🌟 REDUCED MOTION SUPPORT */
+@media (prefers-reduced-motion: reduce) {
+  .soul-cartridge,
+  .portrait-shrine,
+  .floating-soul-icon,
+  .sacred-particle {
+    animation: none !important;
+  }
+  
+  .soul-cartridge * {
+    transition-duration: 0.1s !important;
+  }
+}
