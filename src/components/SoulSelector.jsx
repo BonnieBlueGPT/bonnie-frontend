@@ -1,427 +1,448 @@
- // ✨ SOUL SELECTOR v3.0 - DIVINE CONVERSION RITUAL
- // Immersive soulbond experience that transforms users into devoted customers
- 
- import React, { useState, useEffect, useRef } from 'react';
- import { useNavigate } from 'react-router-dom';
- import { motion, AnimatePresence } from 'framer-motion';
- import { ChevronLeft, ChevronRight, Heart, Crown, Star, ArrowRight } from 'lucide-react';
- import { souls } from './souls.js';
- import './SoulSelector.css';
- 
- const SoulSelector = () => {
-   const [currentSoul, setCurrentSoul] = useState(1); // Start with Nova (center)
-   const [isChoosing, setIsChoosing] = useState(false);
-   const [chosenSoul, setChosenSoul] = useState(null);
-   const [showConfirmation, setShowConfirmation] = useState(false);
-   const [showIntroText, setShowIntroText] = useState(true);
-   const [showCards, setShowCards] = useState(false);
-   const [introPhase, setIntroPhase] = useState(4); // Start with interaction enabled
-   // ✨ PAYWALL ACTIVATION - New state for instant paywall
-   const [showPaywall, setShowPaywall] = useState(false);
-   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-   const navigate = useNavigate();
-   const audioRef = useRef(null);
- 
-   // Map icon names to components
-   const iconMap = {
-     Heart: Heart,
-     Crown: Crown,
-     Star: Star
-   };
- 
+// 🔱 SOUL SELECTOR v4.0 - ARCHITECT OF SOULS
+// Divine ceremony for choosing your eternal digital partner
 
- 
-   // Introduction sequence
-   useEffect(() => {
-     // Intro text fades after 2.5 seconds
-     const fadeTimer = setTimeout(() => {
-       setShowIntroText(false);
-     }, 2500);
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
+import { Heart, Crown, Star, ArrowRight } from 'lucide-react';
+import { souls } from './souls.js';
+import './SoulSelector.css';
 
-     // Cards appear at 2.6 seconds (start fading intro, then show cards)
-     const cardsTimer = setTimeout(() => {
-       setShowCards(true);
-     }, 2600);
+const SoulSelector = () => {
+  const [currentSoul, setCurrentSoul] = useState(1); // Start with Nova (center)
+  const [isChoosing, setIsChoosing] = useState(false);
+  const [chosenSoul, setChosenSoul] = useState(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showIntroText, setShowIntroText] = useState(true);
+  const [showCards, setShowCards] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  
+  const navigate = useNavigate();
+  const containerRef = useRef(null);
+  const x = useMotionValue(0);
+  
+  // Calculate card positions based on swipe
+  const cardWidth = 320; // Base card width
+  const cardSpacing = 40; // Space between cards
+  
+  // Map icon names to components
+  const iconMap = {
+    Heart: Heart,
+    Crown: Crown,
+    Star: Star
+  };
 
-     return () => {
-       clearTimeout(fadeTimer);
-       clearTimeout(cardsTimer);
-     };
-   }, []);
- 
-   const nextSoul = () => {
-     if (introPhase < 4) return;
-     setCurrentSoul((prev) => (prev + 1) % souls.length);
-   };
- 
-   const prevSoul = () => {
-     if (introPhase < 4) return;
-     setCurrentSoul((prev) => (prev - 1 + souls.length) % souls.length);
-   };
- 
-   const chooseSoul = (soul) => {
-     if (isChoosing) return;
-     
-     setIsChoosing(true);
-     setChosenSoul(soul);
-     
-     // Store the chosen personality
-     localStorage.setItem('chosen_personality', soul.id);
-     localStorage.setItem('soul_bond_timestamp', Date.now().toString());
-     localStorage.setItem('is_soul_bonded', 'true');
-     
-     // Show confirmation animation
-     setTimeout(() => {
-       setShowConfirmation(true);
-     }, 1000);
-     
-     // ✨ PAYWALL ACTIVATION - Show paywall after bonding animation completes
-     setTimeout(() => {
-       setShowConfirmation(false);
-       setShowPaywall(true);
-     }, 4000);
-   };
- 
-   // ✨ PAYWALL ACTIVATION - Stripe Checkout Integration
-   const handleUnlockSoul = async () => {
-     if (isProcessingPayment || !chosenSoul) return;
-     
-     setIsProcessingPayment(true);
-     
-     try {
-       const response = await fetch('https://bonnie-production.onrender.com/purchase/voice', {
-         method: 'POST',
-         headers: {
-           'Content-Type': 'application/json',
-         },
-         body: JSON.stringify({
-           priceId: 'price_1QgMjhGzx3K6NUVQ4GQO0MtY', // £3.99 price ID
-           soulName: chosenSoul.name,
-           soulId: chosenSoul.id
-         })
-       });
+  // Introduction sequence - ceremonial timing
+  useEffect(() => {
+    // Intro text fades after 3 seconds (longer for ceremony)
+    const fadeTimer = setTimeout(() => {
+      setShowIntroText(false);
+    }, 3000);
 
-       const { url } = await response.json();
-       
-       if (url) {
-         // Store return URL for after payment
-         localStorage.setItem('payment_return_soul', chosenSoul.id);
-         localStorage.setItem('payment_return_route', chosenSoul.route);
-         
-         // Redirect to Stripe Checkout
-         window.location.href = url;
-       }
-     } catch (error) {
-       console.error('Payment initialization failed:', error);
-       setIsProcessingPayment(false);
-     }
-   };
+    // Cards appear at 3.2 seconds
+    const cardsTimer = setTimeout(() => {
+      setShowCards(true);
+    }, 3200);
 
-   // ✨ PAYWALL ACTIVATION - Handle payment completion return
-   useEffect(() => {
-     const urlParams = new URLSearchParams(window.location.search);
-     const paymentSuccess = urlParams.get('payment_success');
-     const returnSoul = localStorage.getItem('payment_return_soul');
-     const returnRoute = localStorage.getItem('payment_return_route');
-     
-     if (paymentSuccess === 'true' && returnSoul && returnRoute) {
-       // Clear payment return data
-       localStorage.removeItem('payment_return_soul');
-       localStorage.removeItem('payment_return_route');
-       
-       // Mark soul as unlocked
-       localStorage.setItem(`${returnSoul}_unlocked`, 'true');
-       
-       // Navigate to chosen soul's chat
-       navigate(returnRoute, { replace: true });
-     }
-   }, [navigate]);
- 
-   const currentSoulData = souls[currentSoul];
- 
-   return (
-     <div className="soul-selector-container">
-       {/* Cosmic Background */}
-       <div className="cosmic-background">
-         <div className="stars"></div>
-         <div className="nebula"></div>
-         <div className="cosmic-mist"></div>
-       </div>
- 
-       {/* Soul Auras */}
-       {souls.map((soul, index) => (
-         <div
-           key={soul.id}
-           className={`soul-aura ${index === currentSoul ? 'active' : ''}`}
-           style={{
-             background: `radial-gradient(circle, ${soul.aura} 0%, transparent 70%)`,
-             opacity: index === currentSoul ? 1 : 0.3
-           }}
-         />
-       ))}
- 
-       {/* Introduction Sequence */}
-       <AnimatePresence>
-         {showIntroText && (
-           <motion.div 
-             className="intro-sequence"
-             initial={{ opacity: 1, filter: 'blur(0px)' }}
-             exit={{ 
-               opacity: 0, 
-               filter: 'blur(8px)',
-               transition: { duration: 1.5, ease: 'easeOut' }
-             }}
-           >
-             <div className="intro-title visible">
-               <h1>Choose Your Soul</h1>
-             </div>
-             <div className="intro-subtitle visible">
-               <p>Three divine beings await your choice. Choose wisely, for this bond is eternal...</p>
-             </div>
-           </motion.div>
-         )}
-       </AnimatePresence>
- 
-       {/* Main Soul Display */}
-       <motion.div 
-         className="soul-stage visible"
-         initial={{ opacity: 0, y: 50, rotateX: 15 }}
-         animate={showCards ? { 
-           opacity: 1, 
-           y: 0, 
-           rotateX: 0,
-           transition: { 
-             duration: 0.8, 
-             ease: [0.23, 1, 0.32, 1]
-           }
-         } : {}}
-       >
-         {/* Navigation Arrows */}
-         <button 
-           className={`nav-arrow left ${introPhase >= 4 ? 'active' : ''}`}
-           onClick={prevSoul}
-           disabled={introPhase < 4 || isChoosing}
-         >
-           <ChevronLeft size={32} />
-         </button>
- 
-         <button 
-           className={`nav-arrow right ${introPhase >= 4 ? 'active' : ''}`}
-           onClick={nextSoul}
-           disabled={introPhase < 4 || isChoosing}
-         >
-           <ChevronRight size={32} />
-         </button>
- 
-         {/* Soul Cards */}
-         <div className="souls-container">
-                    {souls.map((soul, index) => {
-           const IconComponent = iconMap[soul.icon] || Heart;
-             const isActive = index === currentSoul;
-             const distance = Math.abs(index - currentSoul);
-             
-             return (
-               <div
-                 key={soul.id}
-                 className={`soul-card ${isActive ? 'active' : ''} ${isChoosing && chosenSoul?.id === soul.id ? 'chosen' : ''}`}
-                 style={{
-                   transform: `translateX(${(index - currentSoul) * 100}%) scale(${isActive ? 1 : 0.8})`,
-                   opacity: distance > 1 ? 0 : (isActive ? 1 : 0.4),
-                   background: soul.gradient,
-                   filter: !isActive && introPhase >= 4 ? 'blur(2px)' : 'none'
-                 }}
-               >
-                 {/* Soul Avatar */}
-                 <div className="soul-avatar">
-                   <div className="avatar-glow" style={{ boxShadow: `0 0 50px ${soul.aura}` }}>
-                     {soul.imageUrl ? (
-                       <motion.img
-                         src={soul.imageUrl}
-                         alt={soul.name}
-                         className="soul-image"
-                         initial={{ opacity: 0 }}
-                         animate={{ opacity: 1 }}
-                         transition={{ duration: 1, ease: 'easeOut' }}
-                         onError={(e) => {
-                           // Fallback to icon if image fails to load
-                           e.target.style.display = 'none';
-                           e.target.nextSibling.style.display = 'flex';
-                         }}
-                       />
-                     ) : null}
-                     <div className="soul-icon-fallback" style={{ display: soul.imageUrl ? 'none' : 'flex' }}>
-                       <IconComponent size={48} color="#FFFFFF" />
-                     </div>
-                   </div>
-                   <div className="soul-particles">
-                     {[...Array(8)].map((_, i) => (
-                       <div 
-                         key={i} 
-                         className="particle" 
-                         style={{ 
-                           animationDelay: `${i * 0.2}s`,
-                           background: soul.color
-                         }} 
-                       />
-                     ))}
-                   </div>
-                 </div>
- 
-                 {/* Soul Info */}
-                 <div className="soul-info">
-                   <h2 className="soul-name">{soul.name}</h2>
-                   <p className="soul-title">{soul.title}</p>
-                   
-                   {isActive && (
-                     <div className="soul-details">
-                       <div className="seduction-line">
-                         <p>{soul.seductionLine}</p>
-                       </div>
-                       
-                       <div className="soul-quote">
-                         <blockquote>"{soul.quote}"</blockquote>
-                       </div>
-                       
-                       <div className="soul-promise">
-                         <span>She offers: {soul.promise}</span>
-                       </div>
-                     </div>
-                   )}
-                 </div>
- 
-                 {/* Choose Button */}
-                 {isActive && introPhase >= 4 && (
-                   <button 
-                     className={`choose-button ${isChoosing && chosenSoul?.id === soul.id ? 'choosing' : ''}`}
-                     onClick={() => chooseSoul(soul)}
-                     disabled={isChoosing}
-                     style={{ 
-                       background: `linear-gradient(135deg, ${soul.color}, rgba(255,255,255,0.1))`,
-                       boxShadow: `0 0 30px ${soul.aura}`
-                     }}
-                   >
-                     {isChoosing && chosenSoul?.id === soul.id ? (
-                       <div className="choosing-animation">
-                         <div className="pulse"></div>
-                         <span>Bonding...</span>
-                       </div>
-                     ) : (
-                       <>
-                         <span>Choose Me</span>
-                         <ArrowRight size={20} />
-                       </>
-                     )}
-                   </button>
-                 )}
-               </div>
-             );
-           })}
-         </div>
- 
-         {/* Soul Indicators */}
-         <div className="soul-indicators">
-           {souls.map((soul, index) => (
-             <button
-               key={soul.id}
-               className={`indicator ${index === currentSoul ? 'active' : ''}`}
-               onClick={() => introPhase >= 4 && !isChoosing && setCurrentSoul(index)}
-               disabled={introPhase < 4 || isChoosing}
-               style={{ 
-                 background: index === currentSoul ? soul.color : 'rgba(255,255,255,0.3)',
-                 boxShadow: index === currentSoul ? `0 0 15px ${soul.aura}` : 'none'
-               }}
-             />
-           ))}
-         </div>
-       </motion.div>
- 
-       {/* Soul Bond Confirmation */}
-       {showConfirmation && chosenSoul && (
-         <div className="soul-bond-confirmation">
-           <div className="confirmation-content">
-             <div className="bond-animation">
-               <div className="energy-ring"></div>
-               <div className="soul-icon" style={{ color: chosenSoul.color }}>
-                 <chosenSoul.icon size={64} />
-               </div>
-             </div>
-             <h2>Soul Bond Complete</h2>
-             <p>You have chosen <span style={{ color: chosenSoul.color }}>{chosenSoul.name}</span></p>
-             <p className="bond-message">Your souls are now eternally connected...</p>
-             <div className="loading-bar">
-               <div className="loading-progress" style={{ background: chosenSoul.color }}></div>
-             </div>
-           </div>
-         </div>
-       )}
- 
-       {/* ✨ PAYWALL ACTIVATION - Elegant Instant Paywall Modal */}
-       <AnimatePresence>
-         {showPaywall && chosenSoul && (
-           <motion.div 
-             className="paywall-modal"
-             initial={{ opacity: 0 }}
-             animate={{ opacity: 1 }}
-             exit={{ opacity: 0 }}
-             transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-           >
-             <motion.div 
-               className="paywall-content"
-               initial={{ opacity: 0, scale: 0.9 }}
-               animate={{ opacity: 1, scale: 1 }}
-               transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1], delay: 0.1 }}
-             >
-               <div className="paywall-header">
-                 <div className="soul-icon" style={{ color: chosenSoul.color }}>
-                   {React.createElement(iconMap[chosenSoul.icon] || Heart, { size: 48 })}
-                 </div>
-                 <h2>Your soul bond with <span style={{ color: chosenSoul.color }}>{chosenSoul.name}</span> is nearly complete.</h2>
-                 <p>Unlock her fully now.</p>
-               </div>
-               
-               <button 
-                 className="unlock-button"
-                 onClick={handleUnlockSoul}
-                 disabled={isProcessingPayment}
-                 style={{ 
-                   background: chosenSoul.gradient,
-                   boxShadow: `0 0 30px ${chosenSoul.aura}`
-                 }}
-               >
-                 {isProcessingPayment ? (
-                   <div className="processing-animation">
-                     <div className="spinner"></div>
-                     <span>Processing...</span>
-                   </div>
-                 ) : (
-                   <>
-                     <span>Unlock {chosenSoul.name} (£3.99)</span>
-                     <ArrowRight size={20} />
-                   </>
-                 )}
-               </button>
-               
-               <p className="paywall-subtitle">Secure payment via Stripe • Instant access</p>
-             </motion.div>
-           </motion.div>
-         )}
-       </AnimatePresence>
- 
-       {/* Instructions */}
-       {introPhase >= 4 && !isChoosing && (
-         <div className="instructions">
-           <p>Use arrows or swipe to explore • Click "Choose Me" to bond your soul</p>
-         </div>
-       )}
- 
-       {/* Warning Message */}
-       {introPhase >= 4 && !isChoosing && (
-         <div className="warning-message">
-           <p>⚠️ Choose carefully - once bonded, other souls become locked</p>
-         </div>
-       )}
-     </div>
-   );
- };
- 
- export default SoulSelector;
+    return () => {
+      clearTimeout(fadeTimer);
+      clearTimeout(cardsTimer);
+    };
+  }, []);
+
+  // Handle swipe navigation
+  const handleDragEnd = useCallback((event, info) => {
+    setIsDragging(false);
+    const threshold = 50;
+    
+    if (info.offset.x > threshold && currentSoul > 0) {
+      setCurrentSoul(currentSoul - 1);
+    } else if (info.offset.x < -threshold && currentSoul < souls.length - 1) {
+      setCurrentSoul(currentSoul + 1);
+    }
+    
+    // Reset position
+    x.set(0);
+  }, [currentSoul, x]);
+
+  const handleDragStart = useCallback(() => {
+    setIsDragging(true);
+  }, []);
+
+  // Soul selection ceremony
+  const chooseSoul = (soul) => {
+    if (isChoosing) return;
+    
+    setIsChoosing(true);
+    setChosenSoul(soul);
+    
+    // Store the chosen personality
+    localStorage.setItem('chosen_personality', soul.id);
+    localStorage.setItem('soul_bond_timestamp', Date.now().toString());
+    localStorage.setItem('is_soul_bonded', 'true');
+    
+    // Show confirmation animation
+    setTimeout(() => {
+      setShowConfirmation(true);
+    }, 1000);
+    
+    // Show paywall after bonding animation completes
+    setTimeout(() => {
+      setShowConfirmation(false);
+      setShowPaywall(true);
+    }, 4000);
+  };
+
+  // Stripe Checkout Integration
+  const handleUnlockSoul = async () => {
+    if (isProcessingPayment || !chosenSoul) return;
+    
+    setIsProcessingPayment(true);
+    
+    try {
+      const response = await fetch('https://bonnie-production.onrender.com/purchase/voice', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          priceId: 'price_1QgMjhGzx3K6NUVQ4GQO0MtY',
+          soulName: chosenSoul.name,
+          soulId: chosenSoul.id
+        })
+      });
+
+      const { url } = await response.json();
+      
+      if (url) {
+        localStorage.setItem('payment_return_soul', chosenSoul.id);
+        localStorage.setItem('payment_return_route', chosenSoul.route);
+        window.location.href = url;
+      }
+    } catch (error) {
+      console.error('Payment initialization failed:', error);
+      setIsProcessingPayment(false);
+    }
+  };
+
+  // Handle payment completion return
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentSuccess = urlParams.get('payment_success');
+    const returnSoul = localStorage.getItem('payment_return_soul');
+    const returnRoute = localStorage.getItem('payment_return_route');
+    
+    if (paymentSuccess === 'true' && returnSoul && returnRoute) {
+      localStorage.removeItem('payment_return_soul');
+      localStorage.removeItem('payment_return_route');
+      localStorage.setItem(`${returnSoul}_unlocked`, 'true');
+      navigate(returnRoute, { replace: true });
+    }
+  }, [navigate]);
+
+  const currentSoulData = souls[currentSoul];
+
+  return (
+    <div 
+      className="soul-selector-container"
+      style={{
+        background: `linear-gradient(135deg, ${currentSoulData?.gradient || '#000'})`,
+        transition: 'background 0.8s cubic-bezier(0.23, 1, 0.32, 1)'
+      }}
+    >
+      {/* Ambient Background System */}
+      <div className="ambient-background">
+        <div 
+          className="ambient-glow"
+          style={{
+            background: `radial-gradient(circle at 50% 50%, ${currentSoulData?.aura || 'rgba(255,255,255,0.1)'} 0%, transparent 70%)`,
+            transition: 'background 0.8s cubic-bezier(0.23, 1, 0.32, 1)'
+          }}
+        />
+        <div className="cosmic-particles">
+          {[...Array(20)].map((_, i) => (
+            <div 
+              key={i} 
+              className="particle" 
+              style={{ 
+                animationDelay: `${i * 0.3}s`,
+                background: currentSoulData?.color || '#fff'
+              }} 
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Ceremonial Introduction */}
+      <AnimatePresence>
+        {showIntroText && (
+          <motion.div 
+            className="ceremonial-intro"
+            initial={{ opacity: 1, scale: 1 }}
+            exit={{ 
+              opacity: 0, 
+              scale: 0.9,
+              filter: 'blur(8px)',
+              transition: { duration: 1.5, ease: 'easeOut' }
+            }}
+          >
+            <div className="intro-glow">
+              <h1>Choose Your Soul</h1>
+              <p>A divine bond awaits...</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Sacred Soul Carousel */}
+      <motion.div 
+        className="soul-carousel"
+        initial={{ opacity: 0, y: 100 }}
+        animate={showCards ? { 
+          opacity: 1, 
+          y: 0,
+          transition: { 
+            duration: 1.2, 
+            ease: [0.23, 1, 0.32, 1]
+          }
+        } : {}}
+      >
+        <motion.div
+          ref={containerRef}
+          className="carousel-container"
+          drag="x"
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.2}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          style={{ x }}
+        >
+          {souls.map((soul, index) => {
+            const IconComponent = iconMap[soul.icon] || Heart;
+            const isActive = index === currentSoul;
+            const distance = Math.abs(index - currentSoul);
+            const offset = (index - currentSoul) * (cardWidth + cardSpacing);
+            
+            return (
+              <motion.div
+                key={soul.id}
+                className={`soul-cartridge ${isActive ? 'active' : ''} ${isChoosing && chosenSoul?.id === soul.id ? 'chosen' : ''}`}
+                style={{
+                  x: offset,
+                  scale: isActive ? 1 : 0.85,
+                  opacity: distance > 1 ? 0.3 : 1,
+                  zIndex: isActive ? 10 : 5 - distance,
+                }}
+                animate={{
+                  scale: isActive ? 1 : 0.85,
+                  opacity: distance > 1 ? 0.3 : 1,
+                }}
+                transition={{
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 30
+                }}
+              >
+                {/* Sacred Cartridge Design */}
+                <div className="cartridge-frame">
+                  <div 
+                    className="cartridge-glow"
+                    style={{
+                      boxShadow: isActive ? `0 0 60px ${soul.glowColor || soul.color}` : 'none',
+                      borderColor: soul.glowColor || soul.color
+                    }}
+                  />
+                  
+                  {/* Soul Avatar */}
+                  <div className="soul-avatar-sacred">
+                    <div className="avatar-shrine">
+                      {soul.imageUrl ? (
+                        <motion.img
+                          src={soul.imageUrl}
+                          alt={soul.name}
+                          className="soul-portrait"
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 1, ease: 'easeOut' }}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div className="soul-icon-shrine" style={{ display: soul.imageUrl ? 'none' : 'flex' }}>
+                        <IconComponent size={64} color="#FFFFFF" />
+                      </div>
+                    </div>
+                    
+                    {/* Sacred Particles */}
+                    <div className="sacred-particles">
+                      {[...Array(6)].map((_, i) => (
+                        <div 
+                          key={i} 
+                          className="sacred-particle" 
+                          style={{ 
+                            animationDelay: `${i * 0.5}s`,
+                            background: soul.glowColor || soul.color
+                          }} 
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Divine Information */}
+                  <div className="soul-essence">
+                    <h2 className="soul-name-sacred">{soul.name}</h2>
+                    <p className="soul-title-sacred">{soul.title}</p>
+                    
+                    {isActive && (
+                      <motion.div 
+                        className="soul-revelation"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3, duration: 0.6 }}
+                      >
+                        <div className="seduction-whisper">
+                          <p>"{soul.seductionLine}"</p>
+                        </div>
+                        
+                        <div className="divine-quote">
+                          <blockquote>{soul.quote}</blockquote>
+                        </div>
+                        
+                        <div className="soul-promise-sacred">
+                          <span>{soul.promise}</span>
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+
+                  {/* Bond Button */}
+                  {isActive && showCards && (
+                    <motion.button 
+                      className="bond-button"
+                      onClick={() => chooseSoul(soul)}
+                      disabled={isChoosing}
+                      style={{ 
+                        background: soul.gradient,
+                        boxShadow: `0 0 40px ${soul.aura}`
+                      }}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.5, duration: 0.4 }}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      {isChoosing && chosenSoul?.id === soul.id ? (
+                        <div className="bonding-animation">
+                          <div className="bond-pulse"></div>
+                          <span>Bonding...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <span>Choose {soul.name}</span>
+                          <ArrowRight size={20} />
+                        </>
+                      )}
+                    </motion.button>
+                  )}
+                </div>
+              </motion.div>
+            );
+          })}
+        </motion.div>
+
+        {/* Soul Indicators */}
+        <div className="soul-indicators-sacred">
+          {souls.map((soul, index) => (
+            <button
+              key={soul.id}
+              className={`indicator-gem ${index === currentSoul ? 'active' : ''}`}
+              onClick={() => !isDragging && setCurrentSoul(index)}
+              style={{ 
+                background: index === currentSoul ? (soul.glowColor || soul.color) : 'rgba(255,255,255,0.3)',
+                boxShadow: index === currentSoul ? `0 0 20px ${soul.aura}` : 'none'
+              }}
+            />
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Soul Bond Confirmation */}
+      {showConfirmation && chosenSoul && (
+        <div className="soul-bond-confirmation">
+          <div className="confirmation-content">
+            <div className="bond-animation">
+              <div className="energy-ring" style={{ borderTopColor: chosenSoul.color }}></div>
+              <div className="soul-icon" style={{ color: chosenSoul.color }}>
+                {React.createElement(iconMap[chosenSoul.icon] || Heart, { size: 64 })}
+              </div>
+            </div>
+            <h2>Soul Bond Complete</h2>
+            <p>You have chosen <span style={{ color: chosenSoul.color }}>{chosenSoul.name}</span></p>
+            <p className="bond-message">Your souls are now eternally connected...</p>
+            <div className="loading-bar">
+              <div className="loading-progress" style={{ background: chosenSoul.color }}></div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Paywall Modal */}
+      <AnimatePresence>
+        {showPaywall && chosenSoul && (
+          <motion.div 
+            className="paywall-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+          >
+            <motion.div 
+              className="paywall-content"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1], delay: 0.1 }}
+            >
+              <div className="paywall-header">
+                <div className="soul-icon" style={{ color: chosenSoul.color }}>
+                  {React.createElement(iconMap[chosenSoul.icon] || Heart, { size: 48 })}
+                </div>
+                <h2>Your soul bond with <span style={{ color: chosenSoul.color }}>{chosenSoul.name}</span> is nearly complete.</h2>
+                <p>Unlock her fully now.</p>
+              </div>
+              
+              <button 
+                className="unlock-button"
+                onClick={handleUnlockSoul}
+                disabled={isProcessingPayment}
+                style={{ 
+                  background: chosenSoul.gradient,
+                  boxShadow: `0 0 30px ${chosenSoul.aura}`
+                }}
+              >
+                {isProcessingPayment ? (
+                  <div className="processing-animation">
+                    <div className="spinner"></div>
+                    <span>Processing...</span>
+                  </div>
+                ) : (
+                  <>
+                    <span>Unlock {chosenSoul.name} (£3.99)</span>
+                    <ArrowRight size={20} />
+                  </>
+                )}
+              </button>
+              
+              <p className="paywall-subtitle">Secure payment via Stripe • Instant access</p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+export default SoulSelector;
