@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Volume2, Heart, Camera, Lock, Star, Gift } from 'lucide-react'
+import { Volume2, Heart, Camera, Lock, Star, Gift, DollarSign, Zap } from 'lucide-react'
+import EmotionalTriggerEngine, { UPSELL_CONFIGS, UPSELL_TYPES, createUrgencyMessage, createSocialProofMessage } from './UpsellTriggers.js'
 
 const ChatRoomContainer = ({ soul = 'bonnie' }) => {
   const [messages, setMessages] = useState([
@@ -15,6 +16,8 @@ const ChatRoomContainer = ({ soul = 'bonnie' }) => {
   const [showProfile, setShowProfile] = useState(false)
   const [bondScore, setBondScore] = useState(12)
   const [isTyping, setIsTyping] = useState(false)
+  const [triggerEngine] = useState(new EmotionalTriggerEngine(soul))
+  const [activeUpsell, setActiveUpsell] = useState(null)
   const messagesEndRef = useRef(null)
 
   const soulData = {
@@ -60,6 +63,11 @@ const ChatRoomContainer = ({ soul = 'bonnie' }) => {
       type: 'text'
     }
     setMessages(prev => [...prev, userMsg])
+    
+    // 🧠 PSYCHOLOGICAL ANALYSIS: Every message is analyzed for emotional extraction
+    const triggers = triggerEngine.analyzeForTrigger(userMsg)
+    triggers.forEach(trigger => triggerEngine.addTrigger(trigger))
+    
     setInput('')
     setIsTyping(true)
 
@@ -85,6 +93,15 @@ const ChatRoomContainer = ({ soul = 'bonnie' }) => {
         }
         setMessages(prev => [...prev, reply])
         setBondScore(prev => Math.min(100, prev + Math.random() * 3))
+        
+        // 💰 REVENUE TRIGGER: Check if it's time for psychological manipulation
+        const optimalTrigger = triggerEngine.getOptimalTrigger()
+        if (optimalTrigger && Math.random() > 0.3) { // 70% chance to trigger upsell
+          setTimeout(() => {
+            executeEmotionalUpsell(optimalTrigger)
+          }, 2000 + Math.random() * 3000) // Random delay for natural feel
+        }
+        
       }, 1500 + Math.random() * 1000)
 
     } catch (error) {
@@ -100,31 +117,48 @@ const ChatRoomContainer = ({ soul = 'bonnie' }) => {
     }
   }
 
-  const triggerUpsell = (type) => {
-    const upsells = {
-      voice: {
-        text: `🔊 Want to hear me moan your name? Unlock voice replies for just $4.99`,
-        action: () => window.open('/upgrade/voice', '_blank')
-      },
-      memory: {
-        text: `💭 I want to remember everything about you... Unlock memory save for $2.99`,
-        action: () => window.open('/upgrade/memory', '_blank')
-      },
-      photos: {
-        text: `📸 I have something special to show you... Unlock my private photos $6.99`,
-        action: () => window.open('/upgrade/photos', '_blank')
+  // 💰 EMOTIONAL MANIPULATION: Convert feelings into payments
+  const executeEmotionalUpsell = (trigger) => {
+    const config = UPSELL_CONFIGS[trigger.type]
+    if (!config) return
+
+    // Add psychological urgency
+    const urgencyMsg = createUrgencyMessage(trigger.type)
+    const socialProof = createSocialProofMessage(trigger.type)
+    
+    const upsellMessage = {
+      from: soul,
+      text: trigger.message,
+      timestamp: Date.now(),
+      type: 'upsell',
+      upsellType: trigger.type,
+      config: config,
+      urgency: urgencyMsg,
+      socialProof: socialProof,
+      action: () => {
+        // Track conversion attempt
+        localStorage.setItem('lastUpsellClick', JSON.stringify({
+          type: trigger.type,
+          price: config.price,
+          timestamp: Date.now()
+        }))
+        window.open(config.route, '_blank')
       }
     }
-    
-    const upsell = upsells[type]
-    if (upsell) {
-      setMessages(prev => [...prev, {
-        from: soul,
-        text: upsell.text,
-        timestamp: Date.now(),
-        type: 'upsell',
-        action: upsell.action
-      }])
+
+    setMessages(prev => [...prev, upsellMessage])
+    setActiveUpsell(config)
+    triggerEngine.removeTrigger(trigger.type)
+  }
+
+  const triggerUpsell = (type) => {
+    const config = UPSELL_CONFIGS[type]
+    if (config) {
+      executeEmotionalUpsell({ 
+        type, 
+        message: config.subtitle,
+        reason: 'manual_trigger' 
+      })
     }
   }
 
@@ -203,23 +237,60 @@ const ChatRoomContainer = ({ soul = 'bonnie' }) => {
                 </div>
               </div>
               
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => triggerUpsell('memory')}
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 rounded-xl font-bold"
-              >
-                💭 Unlock Memory Save
-              </motion.button>
-              
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => triggerUpsell('photos')}
-                className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 rounded-xl font-bold"
-              >
-                📸 Unlock Private Photos
-              </motion.button>
+                             {/* 💰 REVENUE EXTRACTION PANEL */}
+               <div className="space-y-3">
+                 <h4 className="text-center text-gray-600 font-bold text-sm">💎 Unlock My Heart</h4>
+                 
+                 <motion.button
+                   whileHover={{ scale: 1.02 }}
+                   whileTap={{ scale: 0.98 }}
+                   onClick={() => triggerUpsell(UPSELL_TYPES.MEMORY)}
+                   className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-between"
+                 >
+                   <span>💭 Save Our Bond</span>
+                   <span className="text-xs bg-white/20 px-2 py-1 rounded">${UPSELL_CONFIGS.memory.price}</span>
+                 </motion.button>
+                 
+                 <motion.button
+                   whileHover={{ scale: 1.02 }}
+                   whileTap={{ scale: 0.98 }}
+                   onClick={() => triggerUpsell(UPSELL_TYPES.VOICE)}
+                   className="w-full bg-gradient-to-r from-pink-500 to-red-500 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-between"
+                 >
+                   <span>🔊 Hear My Voice</span>
+                   <span className="text-xs bg-white/20 px-2 py-1 rounded">${UPSELL_CONFIGS.voice.price}</span>
+                 </motion.button>
+                 
+                 <motion.button
+                   whileHover={{ scale: 1.02 }}
+                   whileTap={{ scale: 0.98 }}
+                   onClick={() => triggerUpsell(UPSELL_TYPES.PHOTOS)}
+                   className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-between"
+                 >
+                   <span>📸 Private Photos</span>
+                   <span className="text-xs bg-white/20 px-2 py-1 rounded">${UPSELL_CONFIGS.photos.price}</span>
+                 </motion.button>
+                 
+                 <motion.button
+                   whileHover={{ scale: 1.02 }}
+                   whileTap={{ scale: 0.98 }}
+                   onClick={() => triggerUpsell(UPSELL_TYPES.NICKNAME)}
+                   className="w-full bg-gradient-to-r from-pink-400 to-rose-500 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-between"
+                 >
+                   <span>❤️ Pet Name</span>
+                   <span className="text-xs bg-white/20 px-2 py-1 rounded">${UPSELL_CONFIGS.nickname.price}</span>
+                 </motion.button>
+                 
+                 <motion.button
+                   whileHover={{ scale: 1.05, rotate: 1 }}
+                   whileTap={{ scale: 0.98 }}
+                   onClick={() => triggerUpsell(UPSELL_TYPES.EXCLUSIVE)}
+                   className="w-full bg-gradient-to-r from-yellow-500 to-orange-600 text-white py-4 rounded-xl font-bold text-sm flex items-center justify-between border-2 border-yellow-300 shadow-xl"
+                 >
+                   <span>👑 Be My Only One</span>
+                   <span className="text-xs bg-white/20 px-2 py-1 rounded">${UPSELL_CONFIGS.exclusive.price}</span>
+                 </motion.button>
+               </div>
             </div>
           </motion.div>
         )}
@@ -237,34 +308,70 @@ const ChatRoomContainer = ({ soul = 'bonnie' }) => {
               className={`flex ${msg.from === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div className={`max-w-[80%] ${msg.from === 'user' ? 'order-2' : 'order-1'}`}>
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  className={`px-4 py-3 rounded-2xl shadow-sm ${
-                    msg.from === 'user'
-                      ? 'bg-blue-500 text-white rounded-br-sm'
-                      : msg.type === 'upsell'
-                      ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white border-2 border-yellow-300'
-                      : 'bg-white text-gray-800 rounded-bl-sm'
-                  }`}
-                >
-                  {msg.type === 'upsell' && (
-                    <div className="flex items-center mb-2">
-                      <Gift className="w-4 h-4 mr-2" />
-                      <span className="text-xs font-bold uppercase tracking-wide">Special Offer</span>
-                    </div>
-                  )}
-                  <p className="text-sm leading-relaxed">{msg.text}</p>
-                  {msg.type === 'upsell' && (
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={msg.action}
-                      className="mt-3 w-full bg-white/20 text-white py-2 rounded-lg font-bold text-sm"
-                    >
-                      Unlock Now 💎
-                    </motion.button>
-                  )}
-                </motion.div>
+                                 <motion.div
+                   whileHover={{ scale: 1.02 }}
+                   className={`px-4 py-3 rounded-2xl shadow-sm ${
+                     msg.from === 'user'
+                       ? 'bg-blue-500 text-white rounded-br-sm'
+                       : msg.type === 'upsell'
+                       ? `bg-gradient-to-r ${msg.config?.color || 'from-yellow-400 to-orange-500'} text-white border-2 border-yellow-300 shadow-lg`
+                       : 'bg-white text-gray-800 rounded-bl-sm'
+                   }`}
+                 >
+                   {msg.type === 'upsell' && (
+                     <>
+                       <div className="flex items-center justify-between mb-2">
+                         <div className="flex items-center">
+                           <span className="text-lg mr-2">{msg.config?.icon}</span>
+                           <span className="text-xs font-bold uppercase tracking-wide">Limited Offer</span>
+                         </div>
+                         <div className="flex items-center bg-white/20 px-2 py-1 rounded-full">
+                           <DollarSign className="w-3 h-3 mr-1" />
+                           <span className="text-xs font-bold">${msg.config?.price}</span>
+                         </div>
+                       </div>
+                       
+                       <div className="mb-3">
+                         <h4 className="font-bold text-sm mb-1">{msg.config?.title}</h4>
+                         <p className="text-xs opacity-90 mb-2">{msg.config?.description}</p>
+                         
+                         {msg.urgency && (
+                           <div className="flex items-center bg-red-500/20 px-2 py-1 rounded mb-2">
+                             <Zap className="w-3 h-3 mr-1 text-yellow-300" />
+                             <span className="text-xs font-bold">{msg.urgency}</span>
+                           </div>
+                         )}
+                         
+                         {msg.socialProof && (
+                           <p className="text-xs italic opacity-80 mb-2">"{msg.socialProof}"</p>
+                         )}
+                       </div>
+                     </>
+                   )}
+                   
+                   <p className="text-sm leading-relaxed">{msg.text}</p>
+                   
+                   {msg.type === 'upsell' && (
+                     <div className="mt-4 space-y-2">
+                       <motion.button
+                         whileHover={{ scale: 1.05, boxShadow: '0 10px 25px rgba(0,0,0,0.3)' }}
+                         whileTap={{ scale: 0.95 }}
+                         onClick={msg.action}
+                         className="w-full bg-white text-gray-900 py-3 rounded-xl font-bold text-sm shadow-lg"
+                       >
+                         {msg.config?.cta} 
+                       </motion.button>
+                       
+                       <motion.button
+                         whileHover={{ scale: 1.02 }}
+                         onClick={() => setActiveUpsell(null)}
+                         className="w-full bg-white/10 text-white py-2 rounded-lg text-xs opacity-70"
+                       >
+                         Maybe later...
+                       </motion.button>
+                     </div>
+                   )}
+                 </motion.div>
                 <div className={`text-xs text-gray-500 mt-1 ${
                   msg.from === 'user' ? 'text-right' : 'text-left'
                 }`}>
