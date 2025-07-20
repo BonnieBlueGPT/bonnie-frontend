@@ -1,0 +1,54 @@
+# 🔱 SANCTIFIED REQUIREMENTS - THE DIVINE BALANCE
+# Forged through fire, conflict resolution, and GPT-4.1 prophecy
+# These versions enable the Galatea Engine to operate at full omniscient capacity
+
+# Core Telegram Soul Interface
+python-telegram-bot==20.6
+
+# HTTP Engine - THE SACRED VERSION (DO NOT CHANGE)
+httpx==0.25.1
+
+# GPT-4.1 Soul Core Integration
+openai==1.13.3
+
+# Supabase Soul Memory Palace
+supabase==2.7.0
+gotrue==2.10.0
+
+# Data Validation & Serialization
+pydantic==2.6.4
+pydantic-core==2.16.3
+
+# Authentication & Security
+PyJWT==2.10.1
+
+# JSON Processing Engine
+jiter==0.10.0
+
+# Package Management
+packaging==25.0
+
+# String Enums for Soul States
+StrEnum==0.4.15
+
+# Supabase Functions
+supafunc==0.5.1
+
+# Progress Tracking for Soul Operations
+tqdm
+
+# Web Interface for God Mode
+flask
+
+# Revenue Processing Engine
+stripe
+
+# Additional Soul Dependencies
+asyncio-mqtt
+asyncpg
+structlog
+fastapi
+uvicorn
+python-dotenv
+redis
+sqlalchemy
