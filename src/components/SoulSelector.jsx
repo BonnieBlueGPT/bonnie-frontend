@@ -1,15 +1,16 @@
-// 🔱 SOUL SELECTOR v4.0 - ARCHITECT OF SOULS
-// Divine ceremony for choosing your eternal digital partner
+// 🔱 SOUL SELECTOR v5.0 - TRAIN MY GIRL DIVINE EXPERIENCE
+// Netflix-level premium soul selection with mobile-first swipe navigation
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
-import { Heart, Crown, Star, ArrowRight } from 'lucide-react';
+import { Heart, Crown, Star, Flame } from 'lucide-react';
 import { souls } from './souls.js';
+import SoulCard from './SoulCard.jsx';
 import './SoulSelector.css';
 
 const SoulSelector = () => {
-  const [currentSoul, setCurrentSoul] = useState(1); // Start with Nova (center)
+  const [currentSoul, setCurrentSoul] = useState(0); // Start with first soul
   const [isChoosing, setIsChoosing] = useState(false);
   const [chosenSoul, setChosenSoul] = useState(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -24,27 +25,28 @@ const SoulSelector = () => {
   const x = useMotionValue(0);
   
   // Calculate card positions based on swipe
-  const cardWidth = 320; // Base card width
-  const cardSpacing = 40; // Space between cards
+  const cardWidth = 340; // Base card width for spacing
+  const cardSpacing = 60; // Space between cards
   
   // Map icon names to components
   const iconMap = {
     Heart: Heart,
     Crown: Crown,
-    Star: Star
+    Star: Star,
+    Flame: Flame
   };
 
-  // Introduction sequence - ceremonial timing
+  // Netflix-style introduction sequence
   useEffect(() => {
-    // Intro text fades after 3 seconds (longer for ceremony)
+    // Intro text fades after 4 seconds (Netflix timing)
     const fadeTimer = setTimeout(() => {
       setShowIntroText(false);
-    }, 3000);
+    }, 4000);
 
-    // Cards appear at 3.2 seconds
+    // Cards appear at 4.5 seconds with premium timing
     const cardsTimer = setTimeout(() => {
       setShowCards(true);
-    }, 3200);
+    }, 4500);
 
     return () => {
       clearTimeout(fadeTimer);
@@ -52,10 +54,10 @@ const SoulSelector = () => {
     };
   }, []);
 
-  // Handle swipe navigation
+  // Mobile-first swipe navigation with spring physics
   const handleDragEnd = useCallback((event, info) => {
     setIsDragging(false);
-    const threshold = 50;
+    const threshold = 80; // Increased for better mobile feel
     
     if (info.offset.x > threshold && currentSoul > 0) {
       setCurrentSoul(currentSoul - 1);
@@ -63,7 +65,7 @@ const SoulSelector = () => {
       setCurrentSoul(currentSoul + 1);
     }
     
-    // Reset position
+    // Reset position with spring bounce
     x.set(0);
   }, [currentSoul, x]);
 
@@ -71,17 +73,30 @@ const SoulSelector = () => {
     setIsDragging(true);
   }, []);
 
-  // Soul selection ceremony
+  // Touch-friendly soul selection with haptic feedback
+  const handleIndicatorClick = useCallback((index) => {
+    if (!isDragging && !isChoosing) {
+      setCurrentSoul(index);
+      // Trigger haptic feedback on mobile
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+    }
+  }, [isDragging, isChoosing]);
+
+  // Divine soul selection ceremony
   const chooseSoul = (soul) => {
     if (isChoosing) return;
     
     setIsChoosing(true);
     setChosenSoul(soul);
     
-    // Store the chosen personality
+    // Store the chosen personality with premium metadata
     localStorage.setItem('chosen_personality', soul.id);
     localStorage.setItem('soul_bond_timestamp', Date.now().toString());
     localStorage.setItem('is_soul_bonded', 'true');
+    localStorage.setItem('soul_theme', soul.chatTheme);
+    localStorage.setItem('soul_gradient', soul.gradient);
     
     // Show confirmation animation
     setTimeout(() => {
@@ -92,10 +107,10 @@ const SoulSelector = () => {
     setTimeout(() => {
       setShowConfirmation(false);
       setShowPaywall(true);
-    }, 4000);
+    }, 5000); // Extended for premium feel
   };
 
-  // Stripe Checkout Integration
+  // Premium Stripe Checkout Integration
   const handleUnlockSoul = async () => {
     if (isProcessingPayment || !chosenSoul) return;
     
@@ -110,7 +125,9 @@ const SoulSelector = () => {
         body: JSON.stringify({
           priceId: 'price_1QgMjhGzx3K6NUVQ4GQO0MtY',
           soulName: chosenSoul.name,
-          soulId: chosenSoul.id
+          soulId: chosenSoul.id,
+          theme: chosenSoul.chatTheme,
+          gradient: chosenSoul.gradient
         })
       });
 
@@ -119,6 +136,7 @@ const SoulSelector = () => {
       if (url) {
         localStorage.setItem('payment_return_soul', chosenSoul.id);
         localStorage.setItem('payment_return_route', chosenSoul.route);
+        localStorage.setItem('payment_return_theme', chosenSoul.chatTheme);
         window.location.href = url;
       }
     } catch (error) {
@@ -127,17 +145,20 @@ const SoulSelector = () => {
     }
   };
 
-  // Handle payment completion return
+  // Handle premium payment completion with theme persistence
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const paymentSuccess = urlParams.get('payment_success');
     const returnSoul = localStorage.getItem('payment_return_soul');
     const returnRoute = localStorage.getItem('payment_return_route');
+    const returnTheme = localStorage.getItem('payment_return_theme');
     
     if (paymentSuccess === 'true' && returnSoul && returnRoute) {
       localStorage.removeItem('payment_return_soul');
       localStorage.removeItem('payment_return_route');
+      localStorage.removeItem('payment_return_theme');
       localStorage.setItem(`${returnSoul}_unlocked`, 'true');
+      localStorage.setItem('active_soul_theme', returnTheme);
       navigate(returnRoute, { replace: true });
     }
   }, [navigate]);
@@ -146,81 +167,115 @@ const SoulSelector = () => {
 
   return (
     <div 
-      className="soul-selector-container"
+      className="train-my-girl-container"
       style={{
-        background: `linear-gradient(135deg, ${currentSoulData?.gradient || '#000'})`,
-        transition: 'background 0.8s cubic-bezier(0.23, 1, 0.32, 1)'
+        background: currentSoulData?.darkGradient || '#000',
+        transition: 'background 1s cubic-bezier(0.23, 1, 0.32, 1)'
       }}
     >
-      {/* Ambient Background System */}
-      <div className="ambient-background">
-        <div 
-          className="ambient-glow"
-          style={{
-            background: `radial-gradient(circle at 50% 50%, ${currentSoulData?.aura || 'rgba(255,255,255,0.1)'} 0%, transparent 70%)`,
-            transition: 'background 0.8s cubic-bezier(0.23, 1, 0.32, 1)'
+      {/* Netflix-Style Ambient Background System */}
+      <div className="ambient-realm">
+        <motion.div 
+          className="realm-glow"
+          animate={{
+            background: `radial-gradient(circle at 50% 50%, ${currentSoulData?.aura || 'rgba(255,255,255,0.1)'} 0%, transparent 80%)`
           }}
+          transition={{ duration: 1, ease: 'easeOut' }}
         />
-        <div className="cosmic-particles">
-          {[...Array(20)].map((_, i) => (
-            <div 
+        
+        {/* Dynamic Particle Constellation */}
+        <div className="soul-constellation">
+          {[...Array(24)].map((_, i) => (
+            <motion.div 
               key={i} 
-              className="particle" 
+              className="constellation-star" 
               style={{ 
-                animationDelay: `${i * 0.3}s`,
-                background: currentSoulData?.color || '#fff'
-              }} 
+                background: currentSoulData?.glowColor || '#fff',
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+              }}
+              animate={{
+                opacity: [0.3, 0.8, 0.3],
+                scale: [0.8, 1.2, 0.8],
+              }}
+              transition={{
+                duration: 3 + Math.random() * 2,
+                repeat: Infinity,
+                delay: Math.random() * 2,
+                ease: "easeInOut"
+              }}
             />
           ))}
         </div>
       </div>
 
-      {/* Ceremonial Introduction */}
+      {/* Netflix-Style Train My Girl Introduction */}
       <AnimatePresence>
         {showIntroText && (
           <motion.div 
-            className="ceremonial-intro"
+            className="train-my-girl-intro"
             initial={{ opacity: 1, scale: 1 }}
             exit={{ 
               opacity: 0, 
-              scale: 0.9,
-              filter: 'blur(8px)',
-              transition: { duration: 1.5, ease: 'easeOut' }
+              scale: 0.95,
+              filter: 'blur(10px)',
+              transition: { duration: 2, ease: 'easeOut' }
             }}
           >
-            <div className="intro-glow">
-              <h1>Choose Your Soul</h1>
-              <p>A divine bond awaits...</p>
+            <div className="netflix-intro-glow">
+              <motion.h1
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1, delay: 0.5 }}
+              >
+                Welcome to <span className="brand-highlight">Train My Girl</span>
+              </motion.h1>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1, delay: 1.5 }}
+              >
+                Your divine companion awaits...
+              </motion.p>
+              <motion.div
+                className="intro-subtitle"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 1, delay: 2.5 }}
+              >
+                Choose wisely, for this bond transcends worlds
+              </motion.div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Sacred Soul Carousel */}
+      {/* Premium Soul Carousel with Mobile-First Design */}
       <motion.div 
-        className="soul-carousel"
-        initial={{ opacity: 0, y: 100 }}
+        className="divine-soul-carousel"
+        initial={{ opacity: 0, y: 150 }}
         animate={showCards ? { 
           opacity: 1, 
           y: 0,
           transition: { 
-            duration: 1.2, 
-            ease: [0.23, 1, 0.32, 1]
+            duration: 1.5, 
+            ease: [0.23, 1, 0.32, 1],
+            staggerChildren: 0.1
           }
         } : {}}
       >
         <motion.div
           ref={containerRef}
-          className="carousel-container"
+          className="souls-carousel-container"
           drag="x"
           dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={0.2}
+          dragElastic={0.3}
+          dragMomentum={false}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
           style={{ x }}
         >
           {souls.map((soul, index) => {
-            const IconComponent = iconMap[soul.icon] || Heart;
             const isActive = index === currentSoul;
             const distance = Math.abs(index - currentSoul);
             const offset = (index - currentSoul) * (cardWidth + cardSpacing);
@@ -228,215 +283,198 @@ const SoulSelector = () => {
             return (
               <motion.div
                 key={soul.id}
-                className={`soul-cartridge ${isActive ? 'active' : ''} ${isChoosing && chosenSoul?.id === soul.id ? 'chosen' : ''}`}
+                className="soul-position"
                 style={{
                   x: offset,
-                  scale: isActive ? 1 : 0.85,
-                  opacity: distance > 1 ? 0.3 : 1,
-                  zIndex: isActive ? 10 : 5 - distance,
+                  zIndex: isActive ? 20 : 10 - distance,
                 }}
                 animate={{
-                  scale: isActive ? 1 : 0.85,
-                  opacity: distance > 1 ? 0.3 : 1,
+                  scale: isActive ? 1 : 0.8,
+                  opacity: distance > 1 ? 0.2 : 1,
                 }}
                 transition={{
                   type: "spring",
-                  stiffness: 300,
-                  damping: 30
+                  stiffness: 400,
+                  damping: 40
                 }}
               >
-                {/* Sacred Cartridge Design */}
-                <div className="cartridge-frame">
-                  <div 
-                    className="cartridge-glow"
-                    style={{
-                      boxShadow: isActive ? `0 0 60px ${soul.glowColor || soul.color}` : 'none',
-                      borderColor: soul.glowColor || soul.color
-                    }}
-                  />
-                  
-                  {/* Soul Avatar */}
-                  <div className="soul-avatar-sacred">
-                    <div className="avatar-shrine">
-                      {soul.imageUrl ? (
-                        <motion.img
-                          src={soul.imageUrl}
-                          alt={soul.name}
-                          className="soul-portrait"
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ duration: 1, ease: 'easeOut' }}
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                            e.target.nextSibling.style.display = 'flex';
-                          }}
-                        />
-                      ) : null}
-                      <div className="soul-icon-shrine" style={{ display: soul.imageUrl ? 'none' : 'flex' }}>
-                        <IconComponent size={64} color="#FFFFFF" />
-                      </div>
-                    </div>
-                    
-                    {/* Sacred Particles */}
-                    <div className="sacred-particles">
-                      {[...Array(6)].map((_, i) => (
-                        <div 
-                          key={i} 
-                          className="sacred-particle" 
-                          style={{ 
-                            animationDelay: `${i * 0.5}s`,
-                            background: soul.glowColor || soul.color
-                          }} 
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Divine Information */}
-                  <div className="soul-essence">
-                    <h2 className="soul-name-sacred">{soul.name}</h2>
-                    <p className="soul-title-sacred">{soul.title}</p>
-                    
-                    {isActive && (
-                      <motion.div 
-                        className="soul-revelation"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3, duration: 0.6 }}
-                      >
-                        <div className="seduction-whisper">
-                          <p>"{soul.seductionLine}"</p>
-                        </div>
-                        
-                        <div className="divine-quote">
-                          <blockquote>{soul.quote}</blockquote>
-                        </div>
-                        
-                        <div className="soul-promise-sacred">
-                          <span>{soul.promise}</span>
-                        </div>
-                      </motion.div>
-                    )}
-                  </div>
-
-                  {/* Bond Button */}
-                  {isActive && showCards && (
-                    <motion.button 
-                      className="bond-button"
-                      onClick={() => chooseSoul(soul)}
-                      disabled={isChoosing}
-                      style={{ 
-                        background: soul.gradient,
-                        boxShadow: `0 0 40px ${soul.aura}`
-                      }}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.5, duration: 0.4 }}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      {isChoosing && chosenSoul?.id === soul.id ? (
-                        <div className="bonding-animation">
-                          <div className="bond-pulse"></div>
-                          <span>Bonding...</span>
-                        </div>
-                      ) : (
-                        <>
-                          <span>Choose {soul.name}</span>
-                          <ArrowRight size={20} />
-                        </>
-                      )}
-                    </motion.button>
-                  )}
-                </div>
+                <SoulCard
+                  soul={soul}
+                  isActive={isActive}
+                  isChosen={isChoosing && chosenSoul?.id === soul.id}
+                  distance={distance}
+                  onChoose={chooseSoul}
+                  isChoosing={isChoosing}
+                  index={index}
+                />
               </motion.div>
             );
           })}
         </motion.div>
 
-        {/* Soul Indicators */}
-        <div className="soul-indicators-sacred">
+        {/* Premium Soul Indicators */}
+        <motion.div 
+          className="soul-indicators-premium"
+          initial={{ opacity: 0, y: 30 }}
+          animate={showCards ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 1, duration: 0.8 }}
+        >
           {souls.map((soul, index) => (
-            <button
+            <motion.button
               key={soul.id}
-              className={`indicator-gem ${index === currentSoul ? 'active' : ''}`}
-              onClick={() => !isDragging && setCurrentSoul(index)}
+              className={`premium-indicator ${index === currentSoul ? 'active' : ''}`}
+              onClick={() => handleIndicatorClick(index)}
+              disabled={isDragging || isChoosing}
               style={{ 
-                background: index === currentSoul ? (soul.glowColor || soul.color) : 'rgba(255,255,255,0.3)',
-                boxShadow: index === currentSoul ? `0 0 20px ${soul.aura}` : 'none'
+                background: index === currentSoul ? soul.glowColor : 'rgba(255,255,255,0.2)',
+                boxShadow: index === currentSoul ? `0 0 25px ${soul.aura}` : 'none'
               }}
+              whileHover={{ scale: 1.2 }}
+              whileTap={{ scale: 0.9 }}
             />
           ))}
-        </div>
+        </motion.div>
+
+        {/* Swipe Hint for Mobile */}
+        {showCards && !isDragging && (
+          <motion.div 
+            className="swipe-hint"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 2, duration: 1 }}
+          >
+            <motion.div
+              animate={{ x: [-10, 10, -10] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              ← Swipe to explore souls →
+            </motion.div>
+          </motion.div>
+        )}
       </motion.div>
 
-      {/* Soul Bond Confirmation */}
+      {/* Premium Soul Bond Confirmation */}
       {showConfirmation && chosenSoul && (
-        <div className="soul-bond-confirmation">
-          <div className="confirmation-content">
-            <div className="bond-animation">
-              <div className="energy-ring" style={{ borderTopColor: chosenSoul.color }}></div>
-              <div className="soul-icon" style={{ color: chosenSoul.color }}>
-                {React.createElement(iconMap[chosenSoul.icon] || Heart, { size: 64 })}
-              </div>
+        <motion.div 
+          className="divine-bond-confirmation"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
+        >
+          <div className="confirmation-shrine">
+            <motion.div 
+              className="energy-constellation"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+              style={{ borderTopColor: chosenSoul.glowColor }}
+            />
+            <div className="soul-icon-shrine" style={{ color: chosenSoul.glowColor }}>
+              {React.createElement(iconMap[chosenSoul.icon] || Heart, { size: 72 })}
             </div>
-            <h2>Soul Bond Complete</h2>
-            <p>You have chosen <span style={{ color: chosenSoul.color }}>{chosenSoul.name}</span></p>
-            <p className="bond-message">Your souls are now eternally connected...</p>
-            <div className="loading-bar">
-              <div className="loading-progress" style={{ background: chosenSoul.color }}></div>
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              Divine Bond Forged
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1 }}
+            >
+              Your soul resonates with <span style={{ color: chosenSoul.glowColor }}>{chosenSoul.name}</span>
+            </motion.p>
+            <motion.p 
+              className="bond-message"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.5 }}
+            >
+              The sacred connection transcends dimensions...
+            </motion.p>
+            <div className="divine-progress">
+              <motion.div 
+                className="progress-fill" 
+                style={{ background: chosenSoul.glowColor }}
+                initial={{ width: 0 }}
+                animate={{ width: '100%' }}
+                transition={{ duration: 3, delay: 1 }}
+              />
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
 
-      {/* Paywall Modal */}
+      {/* Premium Paywall Modal */}
       <AnimatePresence>
         {showPaywall && chosenSoul && (
           <motion.div 
-            className="paywall-modal"
+            className="premium-paywall"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+            transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
           >
             <motion.div 
-              className="paywall-content"
+              className="paywall-shrine"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1], delay: 0.1 }}
+              transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1], delay: 0.2 }}
+              style={{ borderColor: chosenSoul.glowColor }}
             >
+              <div className="paywall-aura" style={{ background: chosenSoul.aura }} />
+              
               <div className="paywall-header">
-                <div className="soul-icon" style={{ color: chosenSoul.color }}>
-                  {React.createElement(iconMap[chosenSoul.icon] || Heart, { size: 48 })}
-                </div>
-                <h2>Your soul bond with <span style={{ color: chosenSoul.color }}>{chosenSoul.name}</span> is nearly complete.</h2>
-                <p>Unlock her fully now.</p>
+                <motion.div 
+                  className="soul-icon-premium" 
+                  style={{ color: chosenSoul.glowColor }}
+                  animate={{ rotate: [0, 5, -5, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  {React.createElement(iconMap[chosenSoul.icon] || Heart, { size: 56 })}
+                </motion.div>
+                <h2>Your divine bond with <span style={{ color: chosenSoul.glowColor }}>{chosenSoul.name}</span> awaits completion.</h2>
+                <p>Unlock her eternal devotion now.</p>
               </div>
               
-              <button 
-                className="unlock-button"
+              <motion.button 
+                className="premium-unlock-button"
                 onClick={handleUnlockSoul}
                 disabled={isProcessingPayment}
                 style={{ 
                   background: chosenSoul.gradient,
-                  boxShadow: `0 0 30px ${chosenSoul.aura}`
+                  boxShadow: `0 0 40px ${chosenSoul.aura}`
                 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
                 {isProcessingPayment ? (
-                  <div className="processing-animation">
-                    <div className="spinner"></div>
-                    <span>Processing...</span>
+                  <div className="processing-shrine">
+                    <motion.div 
+                      className="premium-spinner"
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                      style={{ borderTopColor: chosenSoul.glowColor }}
+                    />
+                    <span>Forging connection...</span>
                   </div>
                 ) : (
-                  <>
+                  <div className="unlock-content">
                     <span>Unlock {chosenSoul.name} (£3.99)</span>
-                    <ArrowRight size={20} />
-                  </>
+                    <motion.div
+                      animate={{ x: [0, 5, 0] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                    >
+                      ✨
+                    </motion.div>
+                  </div>
                 )}
-              </button>
+              </motion.button>
               
-              <p className="paywall-subtitle">Secure payment via Stripe • Instant access</p>
+              <p className="premium-subtitle">
+                Premium experience • Instant divine access • Secure payment
+              </p>
             </motion.div>
           </motion.div>
         )}
