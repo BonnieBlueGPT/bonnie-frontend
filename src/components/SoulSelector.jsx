@@ -16,6 +16,9 @@
    const [showIntroText, setShowIntroText] = useState(true);
    const [showCards, setShowCards] = useState(false);
    const [introPhase, setIntroPhase] = useState(4); // Start with interaction enabled
+   // ✨ PAYWALL ACTIVATION - New state for instant paywall
+   const [showPaywall, setShowPaywall] = useState(false);
+   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
    const navigate = useNavigate();
    const audioRef = useRef(null);
  
@@ -72,16 +75,67 @@
        setShowConfirmation(true);
      }, 1000);
      
-     // Navigate to chosen route with dramatic delay
+     // ✨ PAYWALL ACTIVATION - Show paywall after bonding animation completes
      setTimeout(() => {
-       navigate('/chosen', { 
-         state: { 
-           chosenSoul: soul,
-           fromSoulBond: true 
-         } 
-       });
+       setShowConfirmation(false);
+       setShowPaywall(true);
      }, 4000);
    };
+ 
+   // ✨ PAYWALL ACTIVATION - Stripe Checkout Integration
+   const handleUnlockSoul = async () => {
+     if (isProcessingPayment || !chosenSoul) return;
+     
+     setIsProcessingPayment(true);
+     
+     try {
+       const response = await fetch('https://bonnie-production.onrender.com/purchase/voice', {
+         method: 'POST',
+         headers: {
+           'Content-Type': 'application/json',
+         },
+         body: JSON.stringify({
+           priceId: 'price_1QgMjhGzx3K6NUVQ4GQO0MtY', // £3.99 price ID
+           soulName: chosenSoul.name,
+           soulId: chosenSoul.id
+         })
+       });
+
+       const { url } = await response.json();
+       
+       if (url) {
+         // Store return URL for after payment
+         localStorage.setItem('payment_return_soul', chosenSoul.id);
+         localStorage.setItem('payment_return_route', chosenSoul.route);
+         
+         // Redirect to Stripe Checkout
+         window.location.href = url;
+       }
+     } catch (error) {
+       console.error('Payment initialization failed:', error);
+       setIsProcessingPayment(false);
+     }
+   };
+
+   // ✨ PAYWALL ACTIVATION - Handle payment completion return
+   useEffect(() => {
+     const urlParams = new URLSearchParams(window.location.search);
+     const paymentSuccess = urlParams.get('payment_success');
+     const returnSoul = localStorage.getItem('payment_return_soul');
+     const returnRoute = localStorage.getItem('payment_return_route');
+     
+     if (paymentSuccess === 'true' && returnSoul && returnRoute) {
+       // Clear payment return data
+       localStorage.removeItem('payment_return_soul');
+       localStorage.removeItem('payment_return_route');
+       
+       // Mark soul as unlocked
+       localStorage.setItem(`${returnSoul}_unlocked`, 'true');
+       
+       // Navigate to chosen soul's chat
+       navigate(returnRoute, { replace: true });
+     }
+   }, [navigate]);
  
    const currentSoulData = souls[currentSoul];
  
@@ -300,6 +354,58 @@
            </div>
          </div>
        )}
+ 
+       {/* ✨ PAYWALL ACTIVATION - Elegant Instant Paywall Modal */}
+       <AnimatePresence>
+         {showPaywall && chosenSoul && (
+           <motion.div 
+             className="paywall-modal"
+             initial={{ opacity: 0 }}
+             animate={{ opacity: 1 }}
+             exit={{ opacity: 0 }}
+             transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+           >
+             <motion.div 
+               className="paywall-content"
+               initial={{ opacity: 0, scale: 0.9 }}
+               animate={{ opacity: 1, scale: 1 }}
+               transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1], delay: 0.1 }}
+             >
+               <div className="paywall-header">
+                 <div className="soul-icon" style={{ color: chosenSoul.color }}>
+                   {React.createElement(iconMap[chosenSoul.icon] || Heart, { size: 48 })}
+                 </div>
+                 <h2>Your soul bond with <span style={{ color: chosenSoul.color }}>{chosenSoul.name}</span> is nearly complete.</h2>
+                 <p>Unlock her fully now.</p>
+               </div>
+               
+               <button 
+                 className="unlock-button"
+                 onClick={handleUnlockSoul}
+                 disabled={isProcessingPayment}
+                 style={{ 
+                   background: chosenSoul.gradient,
+                   boxShadow: `0 0 30px ${chosenSoul.aura}`
+                 }}
+               >
+                 {isProcessingPayment ? (
+                   <div className="processing-animation">
+                     <div className="spinner"></div>
+                     <span>Processing...</span>
+                   </div>
+                 ) : (
+                   <>
+                     <span>Unlock {chosenSoul.name} (£3.99)</span>
+                     <ArrowRight size={20} />
+                   </>
+                 )}
+               </button>
+               
+               <p className="paywall-subtitle">Secure payment via Stripe • Instant access</p>
+             </motion.div>
+           </motion.div>
+         )}
+       </AnimatePresence>
  
        {/* Instructions */}
        {introPhase >= 4 && !isChoosing && (
