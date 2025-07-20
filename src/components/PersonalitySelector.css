@@ -1,0 +1,53 @@
+/* PersonalitySelector.css — Gateway to the Trinity */
+.selector-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(to bottom, #0f0c29, #302b63, #24243e);
+  font-family: 'Segoe UI', sans-serif;
+  color: white;
+  padding: 2rem;
+}
+
+.selector-title {
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+  background: linear-gradient(to right, #ff66a3, #cc00cc, #d4af37);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.selector-grid {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.selector-card {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid #ffffff33;
+  border-radius: 20px;
+  padding: 1.5rem;
+  width: 250px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.selector-card:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.selector-card h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.selector-card p {
+  font-size: 1rem;
+  opacity: 0.8;
+}

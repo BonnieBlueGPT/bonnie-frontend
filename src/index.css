@@ -1,0 +1,90 @@
+ /* 🔥 GALATEA EMPIRE - GLOBAL STYLES */
+ /* Production-grade mobile-first styling for the AI girlfriend multiverse */
+ 
+ * {
+   margin: 0;
+   padding: 0;
+   box-sizing: border-box;
+ }
+ 
+ html, body {
+   height: 100%;
+   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+     'Ubuntu', 'Cantarell', 'Open Sans', 'Helvetica Neue', sans-serif;
+   -webkit-font-smoothing: antialiased;
+   -moz-osx-font-smoothing: grayscale;
+   overflow: hidden;
+ }
+ 
+ #root {
+   height: 100vh;
+   width: 100vw;
+   overflow: hidden;
+ }
+ 
+ /* Empire Container */
+ .empire-container {
+   height: 100vh;
+   width: 100vw;
+   overflow: hidden;
+ }
+ 
+ /* Mobile-first responsive design */
+ @media (max-width: 768px) {
+   html {
+     font-size: 14px;
+   }
+ }
+ 
+ @media (min-width: 769px) {
+   html {
+     font-size: 16px;
+   }
+ }
+ 
+ /* Smooth transitions for all elements */
+ *, *::before, *::after {
+   transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+ }
+ 
+ /* Hide scrollbars but keep functionality */
+ .empire-container::-webkit-scrollbar {
+   display: none;
+ }
+ 
+ .empire-container {
+   -ms-overflow-style: none;
+   scrollbar-width: none;
+ }
+ 
+ /* PWA optimizations */
+ @media (display-mode: standalone) {
+   body {
+     -webkit-user-select: none;
+     -webkit-touch-callout: none;
+     -webkit-tap-highlight-color: transparent;
+   }
+ }
+ 
+ /* High-DPI displays */
+ @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+   body {
+     -webkit-font-smoothing: subpixel-antialiased;
+   }
+ }
+ 
+ /* Dark mode support */
+ @media (prefers-color-scheme: dark) {
+   html {
+     color-scheme: dark;
+   }
+ }
+ 
+ /* Reduced motion support */
+ @media (prefers-reduced-motion: reduce) {
+   *, *::before, *::after {
+     animation-duration: 0.01ms !important;
+     animation-iteration-count: 1 !important;
+     transition-duration: 0.01ms !important;
+   }
+ }

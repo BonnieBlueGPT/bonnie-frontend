@@ -1,0 +1,72 @@
+/* BonnieChat.css — Sweet Loving Vibe */
+.bonnie-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: linear-gradient(to bottom, #ffe6f0, #ffccd9);
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.bonnie-header {
+  text-align: center;
+  font-size: 1.5rem;
+  background: #ff99cc;
+  padding: 1rem;
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.bonnie-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.bonnie-bubble {
+  padding: 10px 15px;
+  margin-bottom: 10px;
+  border-radius: 18px;
+  max-width: 75%;
+  line-height: 1.4;
+}
+
+.bonnie-bubble.user {
+  background-color: #fff;
+  align-self: flex-end;
+  margin-left: auto;
+  border: 1px solid #ff99cc;
+}
+
+.bonnie-bubble.bonnie {
+  background-color: #ffccdd;
+  color: #333;
+  align-self: flex-start;
+  margin-right: auto;
+}
+
+.bonnie-input {
+  display: flex;
+  padding: 1rem;
+  background: #fff0f5;
+  border-top: 1px solid #ffcce0;
+}
+
+.bonnie-input input {
+  flex: 1;
+  padding: 0.7rem;
+  border: 1px solid #ff99cc;
+  border-radius: 20px;
+  outline: none;
+  font-size: 1rem;
+}
+
+.bonnie-input button {
+  margin-left: 10px;
+  background: #ff66a3;
+  color: white;
+  border: none;
+  padding: 0 20px;
+  border-radius: 20px;
+  cursor: pointer;
+}

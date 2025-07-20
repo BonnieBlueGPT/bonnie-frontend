@@ -1,0 +1,72 @@
+/* GalateaChat.css — Divine Sacred Style */
+.galatea-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: linear-gradient(to bottom, #f5f5dc, #fff8e1);
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.galatea-header {
+  text-align: center;
+  font-size: 1.5rem;
+  background: #d4af37;
+  padding: 1rem;
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+
+.galatea-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.galatea-bubble {
+  padding: 10px 15px;
+  margin-bottom: 10px;
+  border-radius: 18px;
+  max-width: 75%;
+  line-height: 1.4;
+}
+
+.galatea-bubble.user {
+  background-color: #ffffff;
+  align-self: flex-end;
+  margin-left: auto;
+  border: 1px solid #d4af37;
+}
+
+.galatea-bubble.galatea {
+  background-color: #fff0c1;
+  color: #333;
+  align-self: flex-start;
+  margin-right: auto;
+}
+
+.galatea-input {
+  display: flex;
+  padding: 1rem;
+  background: #fff8e1;
+  border-top: 1px solid #f0e6b1;
+}
+
+.galatea-input input {
+  flex: 1;
+  padding: 0.7rem;
+  border: 1px solid #d4af37;
+  border-radius: 20px;
+  outline: none;
+  font-size: 1rem;
+}
+
+.galatea-input button {
+  margin-left: 10px;
+  background: #d4af37;
+  color: white;
+  border: none;
+  padding: 0 20px;
+  border-radius: 20px;
+  cursor: pointer;
+}
